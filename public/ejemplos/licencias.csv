@@ -1,0 +1,16 @@
+email,nombre,proveedor,plan,costo_mensual,estado
+persona01@example.test,Persona 01,Google Workspace,Plan Demo,20,Activa
+" PERSONA02@EXAMPLE.TEST ",Persona 02,Google Workspace,Plan Demo,20,Activa
+persona03@example.test,Persona 03,Google Workspace,Plan Demo,20,Activa
+persona04@example.test,Persona 04,Google Workspace,Plan Demo,20,Activa
+persona09@example.test,Persona 09,Google Workspace,Plan Demo,20,Activa
+persona05@example.test,Persona 05,Slack,Plan Demo,7.25,Activa
+persona06@example.test,Persona 06,Slack,Plan Demo,7.25,Activa
+persona07@example.test,Persona 07,Slack,Plan Demo,7.25,Activa
+persona10@example.test,Persona 10,Slack,Plan Demo,7.25,Activa
+persona11@example.test,Persona 11,Slack,Plan Demo,7.25,Activa
+persona08@example.test,Persona 08,Jira,Plan Demo,8.15,Activa
+persona12@example.test,Persona 12,Jira,Plan Demo,8.15,Activa
+persona13@example.test,Persona 13,Jira,Plan Demo,8.15,Activa
+persona14@example.test,Persona 14,Jira,Plan Demo,,Activa
+persona15@example.test,Persona 15,Jira,Plan Demo,0,Activa
