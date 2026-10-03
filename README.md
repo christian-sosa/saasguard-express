@@ -31,6 +31,8 @@ npm run check
 
 Ese comando ejecuta la comprobación de TypeScript, las pruebas automatizadas y el build. Los resultados automatizados no sustituyen la revisión de pantallas y descargas en navegador. El [checklist](docs/checklist-validacion.md) permite registrar la evidencia funcional; no se declara una revisión visual aprobada por disponer de un build.
 
+Los ensayos realizados están en [resultado de validación](docs/resultado-validacion.md) y la comparación visual con Figma en [design-qa.md](design-qa.md).
+
 ## Qué se puede hacer
 
 El recorrido principal implementa las funciones de HU01–HU15: descargar ejemplos, cargar CSV, elegir la columna de email, validar, conciliar, filtrar candidatos, revisar cada caso con responsable y nota, corregir costos, seleccionar un checklist y exportar Excel/PDF. El cierre elimina los archivos y decisiones de la sesión de la app.

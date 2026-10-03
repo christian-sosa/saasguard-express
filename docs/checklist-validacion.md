@@ -57,8 +57,8 @@ El mismo caso puede probarse por proveedor: Google Workspace tiene 4 coincidenci
 
 | HU | Validación posterior necesaria | Estado |
 |---|---|---|
-| HU16 — Varias plataformas | Acumular fuentes sin sustituirlas; identidad y costos por proveedor; filtro y nueva conciliación al cambiar nómina. | Planificada. |
-| HU17 — Comparar snapshots | Exportar todos los candidatos con versión/fecha/conteos; rechazar checklist parcial o proveedores incompatibles; distinguir nuevos/persistentes/ausentes y variación de costo; sin conservar nómina en servidor ni inferir baja/ahorro logrado. | Planificada. |
-| HU18 — Piloto de recurrencia | Definir primera auditoría y período; usar código de organización, fecha y finalización; reportar denominador y retorno espontáneo/acompañado con registros reales, sin nombres/emails/nómina. | Planificada; no completar con datos inventados. |
+| HU16 — Varias plataformas | Acumular fuentes sin sustituirlas; identidad y costos por proveedor; filtro y nueva conciliación al cambiar nómina. | Implementada como extra; validación del equipo pendiente. |
+| HU17 — Comparar snapshots | Exportar todos los candidatos con versión/fecha/conteos; rechazar checklist parcial o proveedores incompatibles; distinguir nuevos/persistentes/ausentes y variación de costo; sin conservar nómina en servidor ni inferir baja/ahorro logrado. | Implementada como extra; validación del equipo pendiente. |
+| HU18 — Piloto de recurrencia | Definir primera auditoría y período; usar código de organización, fecha y finalización; reportar denominador y retorno espontáneo/acompañado con registros reales, sin nombres/emails/nómina. | Registro agregado implementado; estudio real pendiente. No completar con datos inventados. |
 
 El uso de estos CSV verifica comportamiento de prueba. No acredita investigación de campo, retención comercial, PMF ni disposición a pagar. Las verificaciones ejecutadas deben conservar su evidencia y cualquier diferencia respecto del backlog.
