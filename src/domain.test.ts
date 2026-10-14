@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import {
   compareSnapshots, costToCents, createSnapshot, filterCandidates, isExpired, licenseId,
-  normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, reconcile, SESSION_MAX_AGE_MS,
-  summarize, validateEmployees, validateLicenseFiles, validateLicenses, validateSnapshot,
+  normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, pickEmailHeader, reconcile, SESSION_MAX_AGE_MS,
+  suggestEmailHeader, summarize, validateEmployees, validateLicenseFiles, validateLicenses, validateSnapshot,
   type Candidate, type License,
 } from './domain'
 
@@ -277,5 +277,50 @@ describe('sesión de máximo 24 horas y volumen de referencia', () => {
   it('bloquea archivos que superan el volumen del MVP', () => {
     const rows = Array.from({ length: 251 }, (_, i) => ({ email: `persona${i}@empresa.com` }))
     expect(validateEmployees({ headers: ['email'], rows }, 'email').valid).toBe(false)
+  })
+})
+
+describe('columna de email en exportaciones reales de las plataformas (SPIKE-01)', () => {
+  const atlassian = ['User ID', 'User name', 'Email', 'User status', 'Added to org', 'Org role']
+  const google = ['First Name [Required]', 'Last Name [Required]', 'Email Address [Required]', 'Password [Required]', 'Org Unit Path [Required]']
+
+  it('reconoce Email en la exportación de usuarios de Atlassian, que no es la primera columna', () => {
+    expect(suggestEmailHeader(atlassian)).toBe('Email')
+  })
+  it('reconoce Email Address [Required] en el CSV de usuarios de Google Workspace', () => {
+    expect(suggestEmailHeader(google)).toBe('Email Address [Required]')
+  })
+  it('conserva el reconocimiento de los encabezados que ya se aceptaban', () => {
+    expect(suggestEmailHeader(['nombre', 'correo_electronico'])).toBe('correo_electronico')
+    expect(suggestEmailHeader(['username', 'E-mail', 'status'])).toBe('E-mail')
+  })
+  it('no adivina cuando ningún encabezado habla de email', () => {
+    expect(suggestEmailHeader(['ident', 'persona', 'sector', 'casilla'])).toBe('')
+  })
+  it('valida un CSV con encabezados de Google sin renombrar columnas y normaliza el email', () => {
+    const table = parseCsv('First Name [Required],Last Name [Required],Email Address [Required]\nAna,Pérez,  Ana@Empresa.COM \n')
+    const result = validateEmployees(table, suggestEmailHeader(table.headers))
+    expect(result.valid).toBe(true)
+    expect(result.employees[0].email).toBe('ana@empresa.com')
+  })
+  it('sigue reconociendo la columna de costo cuando la moneda viene entre corchetes', () => {
+    const result = validateLicenses(parseCsv('email,nombre,Monthly Cost [USD]\na@empresa.com,Ana,12.5\n'), 'email', 'Slack')
+    expect(result.licenses[0].cost).toBe(12.5)
+  })
+})
+
+describe('columna de email que se propone al cargar un archivo (SPIKE-01)', () => {
+  it('propone Email en Atlassian y Email Address [Required] en Google', () => {
+    expect(pickEmailHeader(['User ID', 'User name', 'Email', 'User status'])).toBe('Email')
+    expect(pickEmailHeader(['First Name [Required]', 'Last Name [Required]', 'Email Address [Required]'])).toBe('Email Address [Required]')
+  })
+  it('un nombre exacto de email gana sobre otro alias aunque venga después', () => {
+    expect(pickEmailHeader(['Email Address', 'Email'])).toBe('Email')
+    expect(pickEmailHeader(['userPrincipalName', 'displayName', 'mail'])).toBe('mail')
+    expect(pickEmailHeader(['Correo corporativo', 'Correo'])).toBe('Correo')
+  })
+  it('cae en la primera columna cuando ningún encabezado habla de email', () => {
+    expect(pickEmailHeader(['ident', 'persona', 'sector'])).toBe('ident')
+    expect(pickEmailHeader([])).toBe('')
   })
 })

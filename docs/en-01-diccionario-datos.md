@@ -10,7 +10,7 @@ Fecha: 14/10/2026. Contrato de entrada de SaaSGuard Express para el MVP. La colu
 | Nómina de RRHH | `nombre` | No | Apoyo para revisar cada caso | Adoptado |
 | Nómina de RRHH | `area` | No | Apoyo para revisar | Adoptado |
 | Nómina de RRHH | `estado` | No | Si declara baja o inactivo, la fila se rechaza | Adoptado: la nómina representa sólo personal vigente |
-| Exportación SaaS | `email` | Sí | Identidad para el cruce | Adoptado; Atlassian confirma `Email` ([spike](spike-01-formatos-csv.md)) |
+| Exportación SaaS | `email` | Sí | Identidad para el cruce | Adoptado; la documentación de Atlassian (`Email`) y la de Google Workspace (`Email Address [Required]`) lo confirman ([spike](spike-01-formatos-csv.md)) |
 | Exportación SaaS | `proveedor` | No | Proveedor de la cuenta; si falta se usa el proveedor por defecto de la auditoría | Adoptado |
 | Exportación SaaS | `plan` | No | Informativo | Adoptado |
 | Exportación SaaS | `costo_mensual` | No | USD por cuenta y por mes, hasta dos decimales; vacío significa desconocido y cero es válido | Adoptado: las exportaciones de las plataformas no traen costos |
