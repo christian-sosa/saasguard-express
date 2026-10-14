@@ -1744,3 +1744,40 @@ footer {
   accent-color: #6959eb;
   box-shadow: none;
 }
+
+.prep-guide {
+  margin: 0 auto 18px;
+  max-width: 920px;
+  border: 1px solid var(--line, #dfe5ee);
+  border-radius: 12px;
+  background: #fff;
+  padding: 10px 16px;
+}
+.prep-guide summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #4a45b0;
+}
+.prep-guide-body {
+  margin-top: 10px;
+  display: grid;
+  gap: 8px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #3a4357;
+}
+.prep-guide-body p { margin: 0; }
+.prep-guide-body code {
+  background: #eef1f7;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-size: 13px;
+}
+.audit-stamp { margin-top: -4px; font-size: 13px; }
+.review-note {
+  display: block;
+  margin-top: 4px;
+  color: #6b7488;
+  font-size: 12px;
+  max-width: 190px;
+}
