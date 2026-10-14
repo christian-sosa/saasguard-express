@@ -124,7 +124,7 @@ export function suggestEmailHeader(headers: string[]): string {
 }
 
 export function parseCsv(text: string): ParseResult {
-  if (!text.trim()) return { headers: [], rows: [], issues: [error(0, 'El archivo está vacío.')], rowNumbers: [] }
+  if (!text.trim()) return { headers: [], rows: [], issues: [error(0, 'El archivo está vacío. Volvé a exportar la lista y cargá un CSV con una fila de encabezado y al menos una fila de datos.')], rowNumbers: [] }
   if (text.includes('\0')) return { headers: [], rows: [], issues: [error(0, 'El archivo contiene datos binarios; cargá un CSV de texto.')], rowNumbers: [] }
   const input = text.replace(/^\uFEFF/, '')
   const parsed = Papa.parse<string[]>(input, {

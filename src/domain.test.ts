@@ -44,6 +44,13 @@ describe('CSV y asignación de columnas', () => {
     expect(validateEmployees(result, 'email').valid).toBe(true)
   })
 
+  it('explica cómo corregir un archivo vacío o con sólo espacios', () => {
+    for (const text of ['', '  \n  ']) {
+      const message = parseCsv(text).issues[0].message
+      expect(message).toContain('El archivo está vacío')
+      expect(message).toContain('encabezado')
+    }
+  })
   it('no inventa columnas a partir de un archivo vacío o binario', () => {
     expect(parseCsv('').rows).toEqual([])
     expect(parseCsv('email\0a@empresa.com').issues[0].severity).toBe('error')

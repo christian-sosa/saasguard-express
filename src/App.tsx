@@ -403,6 +403,10 @@ export function App() {
   const selected = candidates.filter((c) => c.review === "confirmed");
   const pendingCount = candidates.filter((c) => c.review === "pending").length;
   const providers = [...new Set(licenses.map((l) => l.provider))].sort();
+  const matched = useMemo(() => {
+    const flagged = new Set(candidates.map((c) => c.id));
+    return licenses.filter((l) => !flagged.has(l.id));
+  }, [candidates, licenses]);
   const filtered = candidates.filter(
     (c) =>
       (providerFilter === "all" || c.provider === providerFilter) &&
@@ -1235,6 +1239,21 @@ export function App() {
                   "coinciden con la nómina",
                 )}
               </small>
+              {matched.length > 0 && (
+                <details className="matched-list">
+                  <summary>
+                    Coinciden con la nómina ({matched.length})
+                  </summary>
+                  <ul>
+                    {matched.map((l) => (
+                      <li key={l.id}>
+                        <span className="badge mint">Coincide con nómina</span>{" "}
+                        {l.name || l.email} · {l.email} · {l.provider}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </section>
             <aside className="chart-panel">
               <h3>Potencial por plataforma</h3>
