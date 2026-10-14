@@ -43,6 +43,7 @@ import {
 import { exportChecklistXlsx, exportChecklistPdf } from "./exports";
 import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
+import { auditStamp, providerSummary, reviewText } from "./labels";
 
 type Upload = { name: string; table: CsvTable; emailHeader: string };
 type Page = "load" | "results" | "checklist" | "closed";
@@ -402,6 +403,10 @@ export function App() {
   const selected = candidates.filter((c) => c.review === "confirmed");
   const pendingCount = candidates.filter((c) => c.review === "pending").length;
   const providers = [...new Set(licenses.map((l) => l.provider))].sort();
+  const matched = useMemo(() => {
+    const flagged = new Set(candidates.map((c) => c.id));
+    return licenses.filter((l) => !flagged.has(l.id));
+  }, [candidates, licenses]);
   const filtered = candidates.filter(
     (c) =>
       (providerFilter === "all" || c.provider === providerFilter) &&
@@ -766,6 +771,36 @@ export function App() {
               El cruce se habilita cuando ambos archivos están validados.
             </p>
           </div>
+          <details className="prep-guide">
+            <summary>Cómo preparar los archivos</summary>
+            <div className="prep-guide-body">
+              <p>
+                <strong>Nómina de RRHH.</strong> Sólo personal vigente. La
+                columna obligatoria es <code>email</code>; <code>nombre</code> y{" "}
+                <code>area</code> ayudan a revisar cada caso. No hace falta el
+                motivo de egreso ni otros datos del personal.
+              </p>
+              <p>
+                <strong>Usuarios o licencias de la plataforma.</strong> Es la
+                exportación de cada plataforma, distinta de la nómina. La
+                columna obligatoria es <code>email</code>;{" "}
+                <code>proveedor</code>, <code>plan</code> y{" "}
+                <code>costo_mensual</code> (USD por cuenta) son opcionales. Si
+                falta el proveedor se usa el proveedor por defecto.
+              </p>
+              <p>
+                <strong>Exportación manual.</strong> Exportás los datos a mano
+                desde cada plataforma y los subís acá. SaaSGuard no se conecta a
+                Google Workspace, Slack ni Jira y no pide credenciales ni
+                permisos.
+              </p>
+              <p>
+                <strong>Por dónde empezar.</strong> La primera biblioteca de
+                ejemplos usa Google Workspace, Slack y Jira. Descargá las
+                plantillas de cada tarjeta para ver el formato esperado.
+              </p>
+            </div>
+          </details>
           <div className="audit-context">
             <label>
               Organización{" "}
@@ -884,7 +919,7 @@ export function App() {
                 </strong>
                 <span>
                   {saasResult
-                    ? `${counted(saasResult.licenses.length, "licencia", "licencias")} · ${saasResult.valid ? countLabel(saas.length, "Archivo validado", "Archivos validados") : "Revisá las observaciones"}`
+                    ? `${counted(saasResult.licenses.length, "licencia", "licencias")}${saasResult.licenses.length ? ` · ${providerSummary(saasResult.licenses)}` : ""} · ${saasResult.valid ? countLabel(saas.length, "Archivo validado", "Archivos validados") : "Revisá las observaciones"}`
                     : "email, proveedor, plan y costo_mensual · Máximo 1.000 filas"}
                 </span>
               </button>
@@ -1070,6 +1105,10 @@ export function App() {
                 La ausencia en RRHH requiere revisión humana. Abrí cada ficha
                 para decidir cómo seguir.
               </p>
+              <p className="muted audit-stamp">
+                {auditStamp(createdAt)} · Proveedores:{" "}
+                {providerSummary(licenses) || "sin informar"}
+              </p>
               <div className="filters">
                 <label className="search">
                   <IconSearch size={17} />
@@ -1151,8 +1190,14 @@ export function App() {
                           <span
                             className={`badge ${c.review === "confirmed" ? "mint" : c.review === "retained" ? "neutral" : "amber"}`}
                           >
-                            {reviewLabels[c.review]}
+                            {reviewText(c)}
                           </span>
+                          {c.note?.trim() && (
+                            <small className="review-note" title={c.note}>
+                              Nota: {c.note.trim().slice(0, 60)}
+                              {c.note.trim().length > 60 ? "…" : ""}
+                            </small>
+                          )}
                         </td>
                         <td>
                           <button
@@ -1186,8 +1231,29 @@ export function App() {
                 {filtered.length} de{" "}
                 {counted(candidates.length, "candidata", "candidatas")} ·{" "}
                 {counted(employees.length, "colaborador", "colaboradores")} ·{" "}
-                {counted(licenses.length, "licencia única", "licencias únicas")}
+                {counted(licenses.length, "licencia única", "licencias únicas")} ·{" "}
+                {stats.matchedCount}{" "}
+                {countLabel(
+                  stats.matchedCount,
+                  "coincide con la nómina",
+                  "coinciden con la nómina",
+                )}
               </small>
+              {matched.length > 0 && (
+                <details className="matched-list">
+                  <summary>
+                    Coinciden con la nómina ({matched.length})
+                  </summary>
+                  <ul>
+                    {matched.map((l) => (
+                      <li key={l.id}>
+                        <span className="badge mint">Coincide con nómina</span>{" "}
+                        {l.name || l.email} · {l.email} · {l.provider}
+                      </li>
+                    ))}
+                  </ul>
+                </details>
+              )}
             </section>
             <aside className="chart-panel">
               <h3>Potencial por plataforma</h3>
