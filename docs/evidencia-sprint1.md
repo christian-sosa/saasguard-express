@@ -21,7 +21,7 @@ Están en [`docs/evidencia/`](evidencia/), con datos ficticios: `HU-01_guia_de_p
 | HU-07 | 5 de 5 | Terminado |
 | HU-08 | 4 de 4 | Terminado |
 | EN-01 | 4 de 4 | En validación: es un documento que el equipo tiene que leer y aceptar |
-| SPIKE-01 | 3 de 4 | En validación: falta confirmar encabezados de Google Workspace y Slack |
+| SPIKE-01 | 4 de 4 | Terminado: el criterio 1 se cumplió con la documentación oficial de Atlassian y Google Workspace; Slack queda sin confirmar |
 
 ## Observaciones
 
@@ -46,9 +46,10 @@ Están en [`docs/evidencia/`](evidencia/), con datos ficticios: `HU-01_guia_de_p
 | Guardar para RRHH dejaba la etiqueta «Por revisar». | Muestra «Revisar con RRHH» y la nota. |
 | No había una guía dentro de la app. | Guía «Cómo preparar los archivos». |
 | El archivo vacío no decía cómo corregirlo. | El mensaje indica cómo. |
+| La app elegía por defecto la primera columna y no reconocía `Email Address [Required]` de Google. | Reconoce `Email` (Atlassian) y `Email Address [Required]` (Google) sin renombrar columnas. |
 
 ## Pendiente
 
 - Prueba del recorrido con los tres perfiles entrevistados (tarjeta del Sprint 1).
-- Encabezados reales de Google Workspace y Slack (SPIKE-01, criterio 1).
+- Archivos reales de Slack y de Google Workspace para confirmar los encabezados documentados (SPIKE-01); se hace en el piloto y no bloquea la tarjeta.
 - Aceptación del equipo de EN-01 y SPIKE-01.

@@ -31,6 +31,7 @@ import {
   reconcile,
   summarize,
   parseMonthlyCost,
+  suggestEmailHeader,
   createSnapshot,
   compareSnapshots,
   isExpired,
@@ -71,13 +72,7 @@ const countLabel = (count: number, singular: string, plural: string) =>
 const counted = (count: number, singular: string, plural: string) =>
   `${count} ${countLabel(count, singular, plural)}`;
 function findEmail(headers: string[]) {
-  return (
-    headers.find((h) =>
-      /^(email|e-mail|correo|correo_electronico|mail)$/i.test(h.trim()),
-    ) ??
-    headers[0] ??
-    ""
-  );
+  return suggestEmailHeader(headers) || (headers[0] ?? "");
 }
 function parseUpload(name: string, text: string): Upload {
   const parsed = parseCsv(text);

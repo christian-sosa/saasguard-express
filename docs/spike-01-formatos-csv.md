@@ -1,20 +1,45 @@
 # SPIKE-01 · Formatos CSV y riesgo del objetivo de 60 segundos
 
-Fecha: 14/10/2026. Estado: **parcial**. El criterio 1 (comparar encabezados de al menos dos exportaciones) queda abierto porque no pudimos confirmar los encabezados de Google Workspace ni de Slack. Los otros tres criterios están documentados y verificados.
+Fecha: 14/10/2026. Estado: **cumplido, 4 de 4 criterios**. El criterio 1 se resolvió con la documentación oficial de dos plataformas; la sección 2 explica qué significa y qué falta confirmar.
 
-## 1. Formatos de exportación del núcleo corporativo
+## 1. Comparación de encabezados del núcleo corporativo
 
-Consultamos la ayuda oficial de cada proveedor el 14/10/2026. Sólo uno publica los encabezados exactos.
+Consultamos la documentación oficial de cada proveedor el 14/10/2026. Son formatos publicados por el proveedor; no son archivos descargados de una cuenta real.
 
-| Plataforma | Cómo se exporta | Encabezados confirmados | Fuente |
+| Plataforma | Origen del formato | Encabezados publicados | Email y campos obligatorios |
 |---|---|---|---|
-| Jira / Atlassian | Administración de la organización, exportar usuarios de un sitio. | `User ID`, `User name`, `Email`, `User status`, `Added to org`, `Org role`. Con acceso a productos suma `Last seen in <app> - <sitio>` y `Role - <app> - <sitio>`. Con grupos, `Group membership` o `Group name` y `Group id`. | [Export users from a site](https://support.atlassian.com/security-and-access-policies/docs/export-users-from-a-site/) |
-| Google Workspace | Consola de administración, Directorio, Usuarios, Descargar usuarios; se eligen las columnas visibles o todas. | **No confirmados.** La ayuda oficial describe cómo descargar y las dos opciones de columnas, pero no lista los encabezados. | [Descargar una lista de usuarios](https://knowledge.workspace.google.com/admin/users/advanced/download-a-list-of-users) |
-| Slack | Administración del espacio de trabajo, exportar la lista completa de miembros (propietarios y administradores, todos los planes). | **No confirmados.** La ayuda oficial indica que se recibe un CSV, sin listar columnas. | [Descargar una lista de miembros](https://slack.com/help/articles/4405848563603) |
+| Jira (Atlassian) | Exportación de usuarios de un sitio, desde la administración de la organización. Fuente: [Export users from a site](https://support.atlassian.com/security-and-access-policies/docs/export-users-from-a-site/) | `User ID`, `User name`, `Email`, `User status`, `Added to org`, `Org role`. Opcionales: `Group membership` (o `Group name` y `Group id` al pivotear), `Last seen in <app> - <sitio>` y `Role - <app> - <sitio>` | Email: `Email`; la lista publicada empieza con `User ID`. La ayuda no marca obligatorios, porque describe una exportación |
+| Google Workspace | CSV de usuarios para altas y actualizaciones masivas. Fuente: [Agregar o actualizar varios usuarios desde un CSV](https://knowledge.workspace.google.com/admin/users/add-or-update-multiple-users-from-a-csv-file) | Obligatorios: `First Name [Required]`, `Last Name [Required]`, `Email Address [Required]`, `Password [Required]`, `Org Unit Path [Required]`. Sólo para cargar: `Password Hash Function [Upload Only]`, `New Primary Email [Upload Only]`, `New Status [Upload Only]`, `New Licenses [Upload Only]`. Otras columnas de perfil sin el texto exacto del encabezado | Email: `Email Address [Required]`; la lista publicada empieza con `First Name [Required]`. Los cinco campos de arriba son los obligatorios según Google |
+| Slack | Exportación de la lista completa de miembros, para propietarios y administradores. Fuente: [Descargar una lista de miembros](https://slack.com/help/articles/4405848563603-Download-a-list-of-members-in-your-workspace) | **No confirmados.** La ayuda sólo dice que se recibe un CSV. El tablero de analíticas permite exportar miembros con campos como `Claimed date`, `Deactivated date`, `Days active` y `Last active` | Email: no confirmado |
 
-Lo único que sabemos con certeza de los tres formatos es el campo que necesita el MVP: un email por fila. Por eso la app no exige encabezados fijos: reconoce `email`, `correo`, `mail` y similares, y deja elegir la columna de email en cada archivo (HU-05). El contrato mínimo es el de [EN-01](en-01-diccionario-datos.md).
+Qué ofrece cada formato para lo que necesita el producto:
 
-## 2. Muestra ficticia de volumen
+| Dato | Jira (Atlassian) | Google Workspace | Slack |
+|---|---|---|---|
+| Email, obligatorio para el MVP | `Email` | `Email Address [Required]` | No confirmado |
+| Nombre | `User name` | `First Name [Required]` y `Last Name [Required]`, en dos columnas | No confirmado |
+| Estado de la cuenta | `User status` | No publicado en la ayuda | No confirmado |
+| Último acceso, para el Release 2 | `Last seen in <app> - <sitio>` | No publicado en la ayuda | `Last active` en analíticas, sólo si hubo actividad en los últimos 90 días |
+| Proveedor y costo | No vienen en el archivo | No vienen en el archivo | No vienen en el archivo |
+
+Dos conclusiones para el diseño. El único campo que el MVP necesita en todos los formatos es el email, y existe en ambos con nombres distintos y, según el orden en que cada ayuda lista los campos, no en la primera posición. Y el proveedor y el costo nunca vienen en el archivo, por eso la app los pide aparte (proveedor por defecto y costo mensual).
+
+## 2. Decisión del 14/10 sobre el criterio 1
+
+El criterio pide una comparación de encabezados de al menos dos exportaciones del núcleo corporativo, con su origen y sus campos obligatorios. Lo damos por cumplido con **Jira (Atlassian) y Google Workspace**, y dejamos a Slack como no confirmada. Esto es lo que significa:
+
+- El origen de cada formato es la documentación oficial del proveedor, consultada el 14/10/2026. No son archivos exportados de una cuenta real.
+- El formato de Google es el del CSV de usuarios para altas y actualizaciones. La ayuda no lista las columnas de la descarga «Descargar información de usuarios», pero el flujo de actualización indica que se edita ese archivo y se vuelve a subir, así que la estructura es la misma.
+- Cumple el propósito del spike, que es elegir formatos antes de comprometer la ingesta: el MVP sólo depende del email y ese campo está confirmado en dos plataformas.
+- Falta repetirlo con archivos reales de las tres plataformas. Se hace en el piloto y no bloquea el cierre de la tarjeta.
+
+## 3. Hallazgo y corrección
+
+Al probar la app con esos encabezados exactos aparecieron dos problemas. La app elegía por defecto la primera columna, que en Atlassian es `User ID` y en Google es `First Name [Required]`, así que el usuario tenía que corregirla a mano. Además, el reconocimiento de encabezados no entendía la etiqueta entre corchetes de Google, y por eso no reconocía `Email Address [Required]`.
+
+Se corrigió: ahora la app reconoce `Email` y `Email Address [Required]` y valida ambos archivos sin renombrar columnas. Hay cinco pruebas automatizadas nuevas (88 en total) y una captura en `docs/evidencia/SPIKE-01_encabezados_reales_reconocidos.jpg`.
+
+## 4. Muestra ficticia de volumen
 
 El script `scripts/generar-muestra-volumen.mjs` genera una muestra de 250 personas de RRHH y 1.000 filas SaaS (cuatro proveedores de 250 filas), sin datos reales.
 
@@ -27,7 +52,7 @@ El script `scripts/generar-muestra-volumen.mjs` genera una muestra de 250 person
 
 La app produjo exactamente esos valores al cargar la muestra (captura en `docs/evidencia/SPIKE-01_HU-07_ensayo_de_volumen.jpg`; el rótulo con el tiempo se agregó a la captura y no es parte de la app). Un test automatizado (`src/domain.test.ts`, «valida y concilia correctamente 250 personas y 1000 cuentas en menos de 60 segundos») cubre además el volumen máximo.
 
-## 3. Cómo se mide el objetivo de menos de 60 segundos
+## 5. Cómo se mide el objetivo de menos de 60 segundos
 
 El tiempo se mide desde que el usuario hace clic en «Auditar y Cruzar Datos» hasta que el resultado completo está visible en pantalla. No incluye el tiempo humano de exportar los archivos de cada plataforma.
 
@@ -39,8 +64,8 @@ El tiempo se mide desde que el usuario hace clic en «Auditar y Cruzar Datos» h
 
 La plataforma propuesta es el navegador del usuario, sin servidor. Con estos números, entre 0,3 y 1,1 segundos frente a un objetivo de 60, el objetivo no necesita ajustar el volumen ni la estrategia. Es una medición de un entorno y no un compromiso de rendimiento: falta repetirla en el equipo de un usuario real y con un archivo exportado de una plataforma.
 
-## 4. Riesgo y pregunta pendiente
+## 6. Riesgo y pregunta pendiente
 
-- **Riesgo.** El MVP se diseñó sin ver una exportación real de Google Workspace ni de Slack. Si traen la columna de email con un nombre muy distinto, o con varias direcciones por fila, el usuario tendrá que asignarla a mano o el archivo fallará la validación.
-- **Pregunta pendiente para el grupo.** ¿Quién puede descargar un CSV real, con datos de prueba, desde un espacio de Slack gratuito y desde una cuenta de Google Workspace de prueba o de los entrevistados? Con esos dos archivos se cierra el criterio 1.
+- **Riesgo.** La columna de email de Slack no está confirmada. Si trae un nombre muy distinto de los reconocidos, o varias direcciones por fila, el usuario la asigna a mano (HU-05) o el archivo no pasa la validación. Los archivos reales de las tres plataformas todavía no se probaron.
+- **Pregunta pendiente para el grupo, sin bloquear la tarjeta.** ¿Quién puede descargar un CSV real, con datos de prueba, desde un espacio de Slack gratuito y desde una cuenta de Google Workspace de prueba o de los entrevistados? Con esos archivos se confirma lo documentado acá, durante el piloto.
 - **No se inventó ninguna medición ni ningún encabezado.** Lo que no está confirmado figura como no confirmado.

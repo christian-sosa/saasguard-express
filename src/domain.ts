@@ -114,9 +114,11 @@ export function isValidEmail(value: string): boolean {
 }
 
 const canonicalHeader = (value: string): string => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
+/** Google marks its CSV headers with tags such as «Email Address [Required]»; the tag is not part of the name. */
+const headerKey = (value: string): string => canonicalHeader(value.replace(/\[[^\]]*\]/g, ''))
 const findHeader = (table: CsvTable, aliases: string[]): string | undefined => {
-  const wanted = new Set(aliases.map(canonicalHeader))
-  return table.headers.find(header => wanted.has(canonicalHeader(header)))
+  const wanted = new Set(aliases.map(headerKey))
+  return table.headers.find(header => wanted.has(headerKey(header)))
 }
 
 export function suggestEmailHeader(headers: string[]): string {
