@@ -4,6 +4,10 @@ Fecha: 14/10/2026. Rama `feat/sprint1-cierre-criterios`. Entorno: macOS, navegad
 
 Esta evidencia sustituye al checklist inicial sólo para HU-01 a HU-08 y no reemplaza una prueba con los tres perfiles entrevistados, que sigue pendiente.
 
+## Capturas
+
+Están en [`docs/evidencia/`](evidencia/), con datos ficticios: `HU-01_guia_de_preparacion`, `HU-02_HU-03_carga_de_archivos`, `HU-04_errores_de_carga`, `HU-05_asignacion_de_columna`, `HU-06_email_original_y_normalizado`, `HU-07_candidatas_y_coincidencias`, `HU-08_revisar_con_RRHH_y_fecha_de_auditoria` y `SPIKE-01_HU-07_ensayo_de_volumen`. En la última, el rótulo con el tiempo medido se agregó a la captura y no es parte de la app.
+
 ## Resultado por tarjeta
 
 | Tarjeta | Criterios cumplidos | Estado propuesto |
@@ -29,7 +33,7 @@ Esta evidencia sustituye al checklist inicial sólo para HU-01 a HU-08 y no reem
 | HU-04 | Archivo vacío: mensaje con cómo corregirlo. Archivo `.xlsx`: «Elegí un archivo CSV. Las planillas XLSX deben exportarse a CSV primero». Email vacío o inválido con número de fila. Duplicado exacto consolidado con aviso; identidad contradictoria marcada en ambas filas. 251 personas: muestra el máximo de 250 y se reemplaza el archivo. Al cargar uno corregido, los errores del anterior desaparecen. |
 | HU-05 | Con un encabezado no estándar se elige la columna de email y se ven tres filas de ejemplo. Sólo se pueden elegir columnas existentes y el cruce no se habilita con una columna inválida. Cambiar de archivo reinicia la asignación. Las columnas no asignadas no entran al cruce ni a los informes. |
 | HU-06 | `  ZED.Test@Example.TEST ` se compara como `zed.test@example.test` y la ficha muestra el original y el normalizado. ` PERSONA02@EXAMPLE.TEST ` coincide con la nómina. `ana+tag@…` no se confunde con `ana@…`. Un email inválido sigue el camino de HU-04. |
-| HU-07 | Con los ejemplos: 7 candidatas, 8 coincidencias, USD 50,80. Las coincidencias se listan con «Coincide con nómina». Una persona sin licencia no es candidata y los duplicados no suman. Con 250 personas y 1.000 filas el resultado correcto (500 candidatas, USD 2.253,00) aparece 297 ms después del clic. La vista aclara que la ausencia en nómina requiere revisión humana. |
+| HU-07 | Con los ejemplos: 7 candidatas, 8 coincidencias, USD 50,80. Las coincidencias se listan con «Coincide con nómina». Una persona sin licencia no es candidata y los duplicados no suman. Con 250 personas y 1.000 filas el resultado correcto (500 candidatas, USD 2.253,00) aparece entre 297 ms y 1.129 ms después del clic, según la corrida. La vista aclara que la ausencia en nómina requiere revisión humana. |
 | HU-08 | La ficha muestra nombre y email y permite consultar la nómina. No se concilia por nombre. «Guardar para revisar con RRHH» deja la nota y la fila pasa a «Revisar con RRHH» con la nota visible; el caso no entra al checklist. La app no modifica los archivos originales. |
 
 ## Diferencias que se corrigieron al verificar
