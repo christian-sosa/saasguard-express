@@ -35,9 +35,11 @@ El criterio pide una comparación de encabezados de al menos dos exportaciones d
 
 ## 3. Hallazgo y corrección
 
-Al probar la app con esos encabezados exactos aparecieron dos problemas. La app elegía por defecto la primera columna, que en Atlassian es `User ID` y en Google es `First Name [Required]`, así que el usuario tenía que corregirla a mano. Además, el reconocimiento de encabezados no entendía la etiqueta entre corchetes de Google, y por eso no reconocía `Email Address [Required]`.
+Al probar la app con esos encabezados exactos apareció un problema con Google. Al cargar un archivo, la app propone una columna de email: con la exportación de Atlassian ya proponía `Email`, pero con la de Google proponía la primera columna, `First Name [Required]`, porque no reconocía `Email Address [Required]` (la etiqueta entre corchetes no es parte del nombre), y el usuario tenía que corregirla a mano.
 
-Se corrigió: ahora la app reconoce `Email` y `Email Address [Required]` y valida ambos archivos sin renombrar columnas. Hay cinco pruebas automatizadas nuevas (88 en total) y una captura en `docs/evidencia/SPIKE-01_encabezados_reales_reconocidos.jpg`.
+Se corrigió sólo la propuesta de la columna de email, sin tocar el reconocimiento de las demás columnas (nombre, proveedor, plan, costo y estado). El orden de preferencia es el de antes: gana un nombre exacto de email; si no hay ninguno, se prueban los alias conocidos, con y sin etiqueta entre corchetes; si tampoco hay, se propone la primera columna. Ahora la app propone `Email` en Atlassian y `Email Address [Required]` en Google, y valida ambos archivos sin renombrar columnas.
+
+Una revisión independiente de la primera versión de la corrección encontró dos regresiones: cambiaba la columna elegida cuando un archivo traía varias columnas de email y dejaba de reconocer encabezados de costo como `Monthly Cost [USD]`. Se reprodujeron con pruebas, se corrigieron y se volvió a correr el mismo arnés de comparación contra el código original: en un barrido de 16.839 listas de encabezados que el código original ya reconocía, ninguna cambió su columna propuesta. Hay nueve pruebas automatizadas nuevas (92 en total) y una captura en `docs/evidencia/SPIKE-01_encabezados_reales_reconocidos.jpg`.
 
 ## 4. Muestra ficticia de volumen
 

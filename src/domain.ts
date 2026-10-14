@@ -114,15 +114,23 @@ export function isValidEmail(value: string): boolean {
 }
 
 const canonicalHeader = (value: string): string => value.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '')
-/** Google marks its CSV headers with tags such as «Email Address [Required]»; the tag is not part of the name. */
-const headerKey = (value: string): string => canonicalHeader(value.replace(/\[[^\]]*\]/g, ''))
 const findHeader = (table: CsvTable, aliases: string[]): string | undefined => {
-  const wanted = new Set(aliases.map(headerKey))
-  return table.headers.find(header => wanted.has(headerKey(header)))
+  const wanted = new Set(aliases.map(canonicalHeader))
+  return table.headers.find(header => wanted.has(canonicalHeader(header)))
 }
+/** Google marks its CSV headers with tags such as «Email Address [Required]»; for the email suggestion the tag is not part of the name. */
+const untaggedHeader = (value: string): string => canonicalHeader(value.replace(/\[[^\]]*\]/g, ''))
 
 export function suggestEmailHeader(headers: string[]): string {
-  return findHeader({ headers, rows: [] }, ['email', 'correo', 'correo electrónico', 'email address', 'mail', 'user principal name', 'primary email', 'correo corporativo']) ?? ''
+  const aliases = ['email', 'correo', 'correo electrónico', 'email address', 'mail', 'user principal name', 'primary email', 'correo corporativo']
+  const untagged = new Set(aliases.map(untaggedHeader))
+  return findHeader({ headers, rows: [] }, aliases) ?? headers.find(header => untagged.has(untaggedHeader(header))) ?? ''
+}
+
+const exactEmailName = /^(email|e-mail|correo|correo_electronico|mail)$/i
+/** Column preselected as the email column when a file is loaded: an exact email name wins over the wider aliases, then the first column. */
+export function pickEmailHeader(headers: string[]): string {
+  return headers.find(header => exactEmailName.test(header.trim())) ?? (suggestEmailHeader(headers) || (headers[0] ?? ''))
 }
 
 export function parseCsv(text: string): ParseResult {

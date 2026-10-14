@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   compareSnapshots, costToCents, createSnapshot, filterCandidates, isExpired, licenseId,
-  normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, reconcile, SESSION_MAX_AGE_MS,
+  normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, pickEmailHeader, reconcile, SESSION_MAX_AGE_MS,
   suggestEmailHeader, summarize, validateEmployees, validateLicenseFiles, validateLicenses, validateSnapshot,
   type Candidate, type License,
 } from './domain'
@@ -302,5 +302,25 @@ describe('columna de email en exportaciones reales de las plataformas (SPIKE-01)
     const result = validateEmployees(table, suggestEmailHeader(table.headers))
     expect(result.valid).toBe(true)
     expect(result.employees[0].email).toBe('ana@empresa.com')
+  })
+  it('sigue reconociendo la columna de costo cuando la moneda viene entre corchetes', () => {
+    const result = validateLicenses(parseCsv('email,nombre,Monthly Cost [USD]\na@empresa.com,Ana,12.5\n'), 'email', 'Slack')
+    expect(result.licenses[0].cost).toBe(12.5)
+  })
+})
+
+describe('columna de email que se propone al cargar un archivo (SPIKE-01)', () => {
+  it('propone Email en Atlassian y Email Address [Required] en Google', () => {
+    expect(pickEmailHeader(['User ID', 'User name', 'Email', 'User status'])).toBe('Email')
+    expect(pickEmailHeader(['First Name [Required]', 'Last Name [Required]', 'Email Address [Required]'])).toBe('Email Address [Required]')
+  })
+  it('un nombre exacto de email gana sobre otro alias aunque venga después', () => {
+    expect(pickEmailHeader(['Email Address', 'Email'])).toBe('Email')
+    expect(pickEmailHeader(['userPrincipalName', 'displayName', 'mail'])).toBe('mail')
+    expect(pickEmailHeader(['Correo corporativo', 'Correo'])).toBe('Correo')
+  })
+  it('cae en la primera columna cuando ningún encabezado habla de email', () => {
+    expect(pickEmailHeader(['ident', 'persona', 'sector'])).toBe('ident')
+    expect(pickEmailHeader([])).toBe('')
   })
 })

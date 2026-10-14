@@ -31,7 +31,7 @@ import {
   reconcile,
   summarize,
   parseMonthlyCost,
-  suggestEmailHeader,
+  pickEmailHeader,
   createSnapshot,
   compareSnapshots,
   isExpired,
@@ -71,12 +71,9 @@ const countLabel = (count: number, singular: string, plural: string) =>
   count === 1 ? singular : plural;
 const counted = (count: number, singular: string, plural: string) =>
   `${count} ${countLabel(count, singular, plural)}`;
-function findEmail(headers: string[]) {
-  return suggestEmailHeader(headers) || (headers[0] ?? "");
-}
 function parseUpload(name: string, text: string): Upload {
   const parsed = parseCsv(text);
-  return { name, table: parsed, emailHeader: findEmail(parsed.headers) };
+  return { name, table: parsed, emailHeader: pickEmailHeader(parsed.headers) };
 }
 async function readCsv(file: File): Promise<Upload> {
   if (!/\.csv$/i.test(file.name))
