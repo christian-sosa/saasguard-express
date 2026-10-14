@@ -25,7 +25,7 @@ El script `scripts/generar-muestra-volumen.mjs` genera una muestra de 250 person
 | Candidatas a revisión | 500 |
 | Potencial mensual conocido | USD 2.253,00 |
 
-La app produjo exactamente esos valores al cargar la muestra. Un test automatizado (`src/domain.test.ts`, «valida y concilia correctamente 250 personas y 1000 cuentas en menos de 60 segundos») cubre además el volumen máximo.
+La app produjo exactamente esos valores al cargar la muestra (captura en `docs/evidencia/SPIKE-01_HU-07_ensayo_de_volumen.jpg`; el rótulo con el tiempo se agregó a la captura y no es parte de la app). Un test automatizado (`src/domain.test.ts`, «valida y concilia correctamente 250 personas y 1000 cuentas en menos de 60 segundos») cubre además el volumen máximo.
 
 ## 3. Cómo se mide el objetivo de menos de 60 segundos
 
@@ -34,10 +34,10 @@ El tiempo se mide desde que el usuario hace clic en «Auditar y Cruzar Datos» h
 | Medición (14/10/2026) | Resultado |
 |---|---|
 | Entorno | macOS, navegador integrado de Claude (Chromium), servidor de desarrollo de Vite, muestra de 250 personas y 1.000 filas |
-| Del clic al resultado visible | 297 ms |
+| Del clic al resultado visible | 297 ms en la primera corrida y 1.129 ms en una segunda; la diferencia es variación normal del navegador |
 | De la carga de los archivos al resultado, con confirmación incluida | 1.481 ms, de los cuales unos 1.150 ms son esperas del propio ensayo automatizado |
 
-La plataforma propuesta es el navegador del usuario, sin servidor. Con estos números el objetivo no necesita ajustar el volumen ni la estrategia. Es una medición de un entorno y no un compromiso de rendimiento: falta repetirla en el equipo de un usuario real y con un archivo exportado de una plataforma.
+La plataforma propuesta es el navegador del usuario, sin servidor. Con estos números, entre 0,3 y 1,1 segundos frente a un objetivo de 60, el objetivo no necesita ajustar el volumen ni la estrategia. Es una medición de un entorno y no un compromiso de rendimiento: falta repetirla en el equipo de un usuario real y con un archivo exportado de una plataforma.
 
 ## 4. Riesgo y pregunta pendiente
 
