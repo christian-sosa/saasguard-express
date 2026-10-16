@@ -2,6 +2,8 @@
 
 Decisión del 16/10/2026: publicar el MVP académico en Vercel Hobby, con React, TypeScript y Vite. Se mantiene el procesamiento de CSV y las exportaciones en el navegador. No requiere una API, credenciales de servicios ni base de datos para su alcance actual.
 
+Producción: [saasguard-express.vercel.app](https://saasguard-express.vercel.app/). Primer despliegue aprobado del commit `3fe26f715aba4ee22fb1d329e4a88e5566b8c704`: [detalle en Vercel](https://vercel.com/christian-sosas-projects-0c5f6ce7/saasguard-express/BtSCRz3CZLkkX7MKozqbfvMhm1Cc). Se verificó acceso HTTP sin cookies ni login y el recorrido de demo en navegador.
+
 ## Datos y alcance
 
 Los CSV, candidatos, responsables y notas permanecen en la memoria de la pestaña y se eliminan al cerrar la auditoría, recargar o vencer la sesión de 24 horas. Los archivos descargados permanecen en el equipo. El registro agregado del piloto sigue siendo local a un navegador y puede borrarse por separado; no es un historial compartido.
