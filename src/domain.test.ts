@@ -171,6 +171,34 @@ describe('consolidación de licencias de varios archivos y proveedores', () => {
 })
 
 describe('costos conocidos, selección y cálculos en centavos', () => {
+  it('rechaza durante el cruce un CSV cuyos costos individuales válidos suman fuera del rango seguro', () => {
+    const roster = validateEmployees(parseCsv('email\nvigente@example.test'), 'email')
+    const table = parseCsv('email,cost\na@example.test,90071992547400\nb@example.test,90071992547400\ndesconocido@example.test,\ngratis@example.test,0')
+    const imported = validateLicenseFiles([{ name: 'costos.csv', table, emailHeader: 'email' }], 'Slack')
+    expect(roster.valid).toBe(true)
+    expect(imported.valid).toBe(true)
+    expect(imported.licenses.map(value => value.cost)).toEqual([90071992547400, 90071992547400, null, 0])
+    expect(() => reconcile(imported.licenses, roster.employees)).toThrow(/total supera el rango/)
+    const corrected = imported.licenses.map(value => value.cost === 90071992547400 ? { ...value, cost: 20 } : value)
+    expect(summarize(reconcile(corrected, roster.employees), corrected)).toMatchObject({
+      potentialSavings: 40, knownCostCount: 3, unknownCostCount: 1,
+    })
+  })
+
+  it('permite un total seguro y rechaza una edición que lo exceda sin cambiar costos desconocidos o cero', () => {
+    const licenses = [license('conocido@example.test', 90071992547400), license('desconocido@example.test'), license('gratis@example.test', 0)]
+    const candidates = reconcile(licenses, [])
+    const original = structuredClone(candidates)
+    expect(summarize(candidates, licenses)).toMatchObject({
+      potentialSavings: 90071992547400, knownCostCount: 2, unknownCostCount: 1,
+    })
+    const edited = candidates.map(value => value.email === 'desconocido@example.test' ? { ...value, cost: 90071992547400 } : value)
+    expect(() => summarize(edited, licenses)).toThrow(/total supera el rango/)
+    expect(candidates).toEqual(original)
+    expect(candidates.find(value => value.email === 'desconocido@example.test')?.cost).toBe(null)
+    expect(candidates.find(value => value.email === 'gratis@example.test')?.cost).toBe(0)
+  })
+
   it('distingue costo vacío de cero, admite decimal local y rechaza valores ambiguos', () => {
     expect(parseMonthlyCost('')).toBe(null)
     expect(parseMonthlyCost('0')).toBe(0)

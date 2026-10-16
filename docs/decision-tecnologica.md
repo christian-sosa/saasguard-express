@@ -2,6 +2,8 @@
 
 Fecha: 03/10/2026. Estado: elección provisional del usuario para construir el MVP; el acuerdo del equipo sobre el cambio de arquitectura sigue pendiente.
 
+Actualización del 16/10/2026: el usuario autorizó elegir y ejecutar la publicación gratuita. Se conserva React + TypeScript + Vite y se elige Vercel Hobby para servir el frontend estático. El flujo actual no necesita Supabase: los CSV siguen en el navegador y no se modifica el proyecto de Fábrica de Fútbol, que tiene usuarios reales. La [configuración de despliegue](despliegue.md) describe esta decisión. Esta autorización técnica no reescribe los entregables anteriores ni acredita un acuerdo nuevo del equipo sobre su propuesta no-code.
+
 Para esta demostración vamos a usar React y TypeScript, ejecutar la app localmente y versionar el código en un repositorio privado de GitHub. Así podemos convertir el diseño de Figma en una app funcional, revisar el código y probar el cruce de CSV sin contratar servicios de procesamiento o almacenamiento. GitHub Free permite repositorios privados; esta decisión no exige contratar Codespaces, hosting ni servicios de CI adicionales. [Planes de GitHub](https://github.com/pricing).
 
 La app procesa los archivos en el navegador y mantiene los CSV y resultados en la sesión. El usuario de la app no necesita una cuenta ni subir su nómina a una base de datos en la nube. El repositorio guarda código y ejemplos ficticios, nunca CSV de personal real. La eliminación, el aislamiento de la sesión y la ausencia de datos personales en registros deben comprobarse con el checklist; no se dan por resueltos sólo por elegir React.

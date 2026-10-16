@@ -1,6 +1,6 @@
 # SaaSGuard Express
 
-MVP académico para cruzar una nómina vigente con exportaciones de licencias SaaS, revisar cuentas que no coinciden y preparar un checklist de bajas manuales. Está construido con React y TypeScript y funciona localmente en el navegador.
+MVP académico para cruzar una nómina vigente con exportaciones de licencias SaaS, revisar cuentas que no coinciden y preparar un checklist de bajas manuales. Está construido con React y TypeScript y procesa los archivos localmente en el navegador, tanto al ejecutar en el equipo como al servirlo desde Vercel.
 
 La referencia visual es la versión v2 del [diseño de SaaSGuard en Figma](https://www.figma.com/design/7ooEdCaHVh4rrrBjXlipuA/SaaSGuard?node-id=0-1&p=f). Las cifras de la app se calculan desde los archivos cargados: no reproducen como hechos las cifras ilustrativas del prototipo. El resultado identifica candidatos a revisión y ahorro potencial, sin afirmar egresos, actividad real, accesos revocados ni ahorro logrado.
 
@@ -23,7 +23,7 @@ npm ci
 npm run dev
 ```
 
-Abrir la dirección local que informa Vite, normalmente http://localhost:5173. La app todavía no está desplegada en un hosting público.
+Abrir la dirección local que informa Vite, normalmente http://localhost:5173. La configuración para publicar el mismo frontend estático en Vercel Hobby está en [despliegue](docs/despliegue.md); no requiere variables de entorno ni Supabase.
 
 ```bash
 npm run check

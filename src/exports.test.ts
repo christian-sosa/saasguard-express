@@ -91,9 +91,15 @@ describe('checklist export', () => {
       email: payload, originalEmail: payload, assignee: payload, note: payload,
     }));
     const organization = '\t \r\n=SUM(A1:A9)';
-    const workbook = decode(buildChecklistWorkbook(accounts, { ...meta, organization }));
-    expect(workbook.Sheets.Resumen.B2.v).toBe(organization);
-    for (const sheet of Object.values(workbook.Sheets)) {
+    const sourceWorkbook = buildChecklistWorkbook(accounts, { ...meta, organization });
+    expect(sourceWorkbook.Sheets.Resumen.B2.v).toBe(organization);
+    expect(sourceWorkbook.Sheets.Resumen.B2.t).toBe('s');
+    const workbook = decode(sourceWorkbook);
+    // SheetJS normalizes CRLF to LF when reading XLSX; the source cell stays literal and unchanged.
+    const decodedText = (value: string) => value.replace(/\r\n/g, '\n');
+    expect(workbook.Sheets.Resumen.B2.v).toBe(decodedText(organization));
+    expect(workbook.Sheets.Resumen.B2.t).toBe('s');
+    for (const sheet of [...Object.values(sourceWorkbook.Sheets), ...Object.values(workbook.Sheets)]) {
       for (const [address, cell] of Object.entries(sheet)) {
         if (address.startsWith('!')) continue;
         expect(cell.f).toBeUndefined();
@@ -102,9 +108,14 @@ describe('checklist export', () => {
     }
     payloads.forEach((payload, index) => {
       for (const column of ['A', 'B', 'C', 'D', 'E', 'I', 'J']) {
+        const sourceCell = sourceWorkbook.Sheets.Checklist[`${column}${index + 2}`];
+        expect(sourceCell.t).toBe('s');
+        expect(sourceCell.v).toBe(payload);
+        expect(sourceCell.f).toBeUndefined();
+        expect(sourceCell.F).toBeUndefined();
         const cell = workbook.Sheets.Checklist[`${column}${index + 2}`];
         expect(cell.t).toBe('s');
-        expect(cell.v).toBe(payload);
+        expect(cell.v).toBe(decodedText(payload));
       }
     });
   });

@@ -401,14 +401,17 @@ export function reconcile(licenses: License[], employees: Employee[]): Candidate
     if (!person || typeof person.email !== 'string' || !isValidEmail(person.email)) throw new Error('La nómina contiene un email inválido; corregila antes de conciliar.')
     roster.add(normalizeEmail(person.email))
   }
-  return uniqueLicenses(licenses).filter(license => !roster.has(license.email)).map(license => ({ ...license, review: 'pending' }))
+  const candidates: Candidate[] = uniqueLicenses(licenses).filter(license => !roster.has(license.email)).map(license => ({ ...license, review: 'pending' }))
+  // Reject unsafe totals before the UI commits the audit and calculates its summary during render.
+  sumCents(candidates)
+  return candidates
 }
 
 function sumCents(candidates: Candidate[]): number {
   let sum = 0
   for (const candidate of candidates) {
     sum += costToCents(candidate.cost) ?? 0
-    if (!Number.isSafeInteger(sum)) throw new Error('El total supera el rango de cálculo preciso.')
+    if (!Number.isSafeInteger(sum)) throw new Error('El total supera el rango de cálculo preciso. Revisá y corregí los costos.')
   }
   return sum
 }

@@ -6,3 +6,5 @@ dist/
 design-evidence/
 coverage/
 *.log
+.vercel/
+output/playwright/
