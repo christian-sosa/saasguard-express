@@ -1,7 +1,7 @@
 :root {
   font-family: Inter, Arial, sans-serif;
   color: #424c59;
-  background: #101827;
+  background: #fff;
   font-synthesis: none;
   font-size: 14px;
   --purple: #6959eb;
@@ -81,11 +81,11 @@ a:focus-visible {
   outline-offset: 3px;
 }
 .app-shell {
-  max-width: 1660px;
-  min-height: 900px;
-  margin: 50px auto;
+  width: 100%;
+  min-height: 100vh;
+  min-height: 100dvh;
+  margin: 0;
   background: #fff;
-  border-radius: 20px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
@@ -1268,10 +1268,6 @@ footer {
   color: #6a8175;
 }
 @media (max-width: 1759px) {
-  .app-shell {
-    margin: 30px;
-    min-height: calc(100vh - 60px);
-  }
   .app-header {
     padding: 17px 25px;
   }
@@ -1417,11 +1413,6 @@ footer {
   }
 }
 @media (max-width: 950px) {
-  .app-shell {
-    margin: 15px;
-    border-radius: 14px;
-    min-height: calc(100dvh - 30px);
-  }
   h1 {
     font-size: 24px;
   }
@@ -1582,10 +1573,6 @@ footer {
   }
 }
 @media (max-width: 500px) {
-  .app-shell {
-    margin: 8px;
-    min-height: calc(100dvh - 16px);
-  }
   .app-header {
     padding: 13px;
   }

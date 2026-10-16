@@ -11,8 +11,9 @@ Build app UI in `src/`. Keep `.openai/hosting.json`, `worker/index.js`, `scripts
 ## SaaSGuard decisions
 
 - Follow the user's Figma v2: https://www.figma.com/design/7ooEdCaHVh4rrrBjXlipuA/SaaSGuard?node-id=0-1&p=f.
-- The user chose React + TypeScript for a free local MVP and a private GitHub repository. This is a provisional change from the TP's no-code proposal; explain it separately in `docs/decision-tecnologica.md`.
+- The initial prototype used React + TypeScript instead of the TP's original no-code proposal. The Drive advances dated 08/10/2026 and 16/10/2026 now document React + TypeScript, local-session processing and no authentication as the adopted MVP scope; see `docs/decision-tecnologica.md`. Do not describe the current stack as awaiting a technology choice or claim the paid multiuser product is implemented.
 - Do not modify earlier TP documents, Drive deliverables or Trello boards as part of app development. The user reserves that decision for the team.
 - Commit source and synthetic fixtures only. Personnel CSVs and downloaded reports must stay out of Git.
 - Preserve human review, unknown-versus-zero costs, explicit checklist selection and local-session deletion. The app does not verify inactivity, cancel accounts, authenticate operational roles or prove realized savings.
 - On 16/10/2026 the user authorized choosing the stack and deploying the academic MVP for free on Vercel. Keep React + TypeScript + Vite and client-side CSV processing. Fábrica de Fútbol has real users on Supabase Free: do not change that project's database, Auth, settings or keys for SaaSGuard. The current MVP does not need Supabase; add cloud persistence only when a concrete feature requires it, in an independent free project if available. Do not enable paid services or buy a domain.
+- Visual preference from 16/10/2026: the app fills the viewport with its white surface on desktop and mobile. Do not restore the dark outer frame, centered maximum-width shell, outer margins or rounded shell corners. Keep spacing and styling inside the app.

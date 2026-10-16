@@ -1,8 +1,20 @@
 # Decisión técnica del prototipo SaaSGuard Express
 
-Fecha: 03/10/2026. Estado: elección provisional del usuario para construir el MVP; el acuerdo del equipo sobre el cambio de arquitectura sigue pendiente.
+Registro inicial: 03/10/2026. En esa fecha la elección de React era provisional; los avances posteriores del 08/10 y 16/10 ya la documentan como arquitectura del MVP.
 
-Actualización del 16/10/2026: el usuario autorizó elegir y ejecutar la publicación gratuita. Se conserva React + TypeScript + Vite y se elige Vercel Hobby para servir el frontend estático. El flujo actual no necesita Supabase: los CSV siguen en el navegador y no se modifica el proyecto de Fábrica de Fútbol, que tiene usuarios reales. La [configuración de despliegue](despliegue.md) describe esta decisión. Esta autorización técnica no reescribe los entregables anteriores ni acredita un acuerdo nuevo del equipo sobre su propuesta no-code.
+Actualización del 16/10/2026: el usuario autorizó elegir y ejecutar la publicación gratuita. Se conserva React + TypeScript + Vite y se elige Vercel Hobby para servir el frontend estático. El flujo actual no necesita Supabase: los CSV siguen en el navegador y no se modifica el proyecto de Fábrica de Fútbol, que tiene usuarios reales. La [configuración de despliegue](despliegue.md) describe esta decisión. No se reescriben los entregables históricos.
+
+## Contraste con los documentos actuales de Drive — 16/10/2026
+
+El avance [5_08102026_AvanceSprint1](https://docs.google.com/document/d/1TY8iDOh51QWAlqIsFX-kQ30gfZQ_aKxTyjWG5qcqdU0/edit) ya registra React/TypeScript, el procesamiento en navegador, la sesión local con borrado al cerrar o a las 24 horas y declara: «No hay autenticación, base compartida ni auditoría centralizada». La falta de login es un recorte explícito del MVP; los responsables escritos en una ficha no son cuentas ni permisos autenticados.
+
+El [Documento de Avance del Proyecto creado el 16/10](https://docs.google.com/document/d/1IcrMWWyWSMkaUOHGxuXpOtN_u8fhPLOCfAw1M7JjpWE/edit), para el parcial del 22/10, propone una «Auditoría gratuita para probar sin registrarse». Su arquitectura mantiene nóminas fuera de un servidor/base propios; el roadmap pospone histórico y cobro a Release 2, y multiempresa/reglas a Release 3.
+
+El [modelo de negocio del 24/09](https://docs.google.com/document/d/1ISIYdp4mtt7crZQMpQCZZSb9p8fhvWD1/edit) describe la visión comercial, con histórico, varios usuarios y acceso por rol en distintos planes pagos. Eso no equivale al alcance implementado ni se obtiene al publicar una URL. El MVP tampoco aplica los límites comerciales por cliente del plan Express. Comparar snapshots descargados y guardar agregados en un navegador no constituye histórico cloud.
+
+La sección histórica siguiente conserva la situación y el análisis del 03/10. Las referencias a una elección técnica pendiente corresponden a esa fecha y quedaron superadas por los avances citados. Las cifras financieras originales y el documento de enlaces de Drive todavía requieren su propia actualización; no fueron modificados en esta tarea.
+
+## Registro histórico del 03/10/2026
 
 Para esta demostración vamos a usar React y TypeScript, ejecutar la app localmente y versionar el código en un repositorio privado de GitHub. Así podemos convertir el diseño de Figma en una app funcional, revisar el código y probar el cruce de CSV sin contratar servicios de procesamiento o almacenamiento. GitHub Free permite repositorios privados; esta decisión no exige contratar Codespaces, hosting ni servicios de CI adicionales. [Planes de GitHub](https://github.com/pricing).
 
