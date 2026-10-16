@@ -1,3 +1,5 @@
+import { argentinaDay } from './retention';
+
 export type PilotRun = {
   organizationCode: string;
   completedAt: string;
@@ -27,19 +29,27 @@ function validAggregate(value: unknown, now: number): PilotRun | null {
   const timestamp = Date.parse(completedAt);
   if (
     !Number.isFinite(timestamp) || !Number.isFinite(now) || timestamp > now ||
-    new Date(timestamp).toISOString() !== completedAt
+    new Date(timestamp).toISOString() !== completedAt || argentinaDay(timestamp) !== argentinaDay(now)
   ) return null;
   return { organizationCode: input.organizationCode, completedAt, candidateCount, selectedCount };
 }
 
 export function readPilotRuns(): PilotRun[] {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    if (!Array.isArray(value)) return [];
+    const stored = localStorage.getItem(KEY);
+    if (stored === null) return [];
+    let value: unknown;
+    try { value = JSON.parse(stored); } catch { value = []; }
     const now = Date.now();
-    return value.map((entry) => validAggregate(entry, now))
+    const runs = (Array.isArray(value) ? value : []).map((entry) => validAggregate(entry, now))
       .filter((entry): entry is PilotRun => entry !== null)
       .slice(-MAX_ENTRIES);
+    // Remove yesterday's records from storage itself, including on the first visit after a closed browser.
+    try {
+      if (!runs.length) localStorage.removeItem(KEY);
+      else if (stored !== JSON.stringify(runs)) localStorage.setItem(KEY, JSON.stringify(runs));
+    } catch { /* Storage may be blocked. Expired records are still excluded from the app. */ }
+    return runs;
   } catch {
     return [];
   }
@@ -47,7 +57,7 @@ export function readPilotRuns(): PilotRun[] {
 export function savePilotRun(run: PilotRun): void {
   const aggregate = validAggregate(run, Date.now());
   if (!aggregate) {
-    throw new Error("El registro necesita un código válido, fecha ISO UTC no futura y conteos enteros con seleccionadas dentro del total de candidatas.");
+    throw new Error("El registro necesita un código válido, fecha ISO UTC de hoy en Argentina no futura y conteos enteros con seleccionadas dentro del total de candidatas.");
   }
   // Existing entries are read through the same whitelist. A failed write is surfaced to the caller.
   localStorage.setItem(

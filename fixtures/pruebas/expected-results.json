@@ -1,0 +1,102 @@
+{
+  "schemaVersion": 1,
+  "description": "Datos completamente sinteticos. Costos en USD mensuales por cuenta. Candidatas requieren revision humana.",
+  "loading": {
+    "employeeEmailColumn": "email",
+    "licenseEmailColumn": "email",
+    "defaultCost": null,
+    "confirmCurrentRoster": true
+  },
+  "cases": [
+    {
+      "folder": "01_simple",
+      "employees": "nomina.csv",
+      "licenses": [
+        "licencias_google.csv"
+      ],
+      "expected": {
+        "employeeCount": 5,
+        "totalLicenses": 8,
+        "matchedCount": 5,
+        "candidateCount": 3,
+        "knownCostCount": 3,
+        "unknownCostCount": 0,
+        "zeroCostCandidateCount": 0,
+        "potentialSavingsCents": 2450,
+        "selectedCount": 0
+      }
+    },
+    {
+      "folder": "02_mediano_multiplataforma",
+      "employees": "nomina.csv",
+      "licenses": [
+        "licencias_google.csv",
+        "licencias_slack_jira.csv"
+      ],
+      "expected": {
+        "employeeCount": 30,
+        "totalLicenses": 90,
+        "matchedCount": 60,
+        "candidateCount": 30,
+        "knownCostCount": 27,
+        "unknownCostCount": 3,
+        "zeroCostCandidateCount": 3,
+        "potentialSavingsCents": 22600,
+        "selectedCount": 0
+      }
+    },
+    {
+      "folder": "03_grande_limite",
+      "employees": "nomina.csv",
+      "licenses": [
+        "licencias_google.csv",
+        "licencias_slack.csv",
+        "licencias_jira.csv",
+        "licencias_zoom.csv"
+      ],
+      "expected": {
+        "employeeCount": 250,
+        "totalLicenses": 1000,
+        "matchedCount": 800,
+        "candidateCount": 200,
+        "knownCostCount": 200,
+        "unknownCostCount": 0,
+        "zeroCostCandidateCount": 0,
+        "potentialSavingsCents": 187500,
+        "selectedCount": 0
+      }
+    },
+    {
+      "folder": "04_validacion_errores/corregidos",
+      "employees": "nomina.csv",
+      "licenses": [
+        "licencias.csv"
+      ],
+      "expected": {
+        "employeeCount": 4,
+        "totalLicenses": 7,
+        "matchedCount": 4,
+        "candidateCount": 3,
+        "knownCostCount": 2,
+        "unknownCostCount": 1,
+        "zeroCostCandidateCount": 1,
+        "potentialSavingsCents": 1550,
+        "selectedCount": 0
+      }
+    }
+  ],
+  "invalidCase": {
+    "folder": "04_validacion_errores/con_errores",
+    "employees": "nomina.csv",
+    "licenses": [
+      "licencias.csv"
+    ],
+    "expected": {
+      "employeeRows": 5,
+      "licenseRows": 8,
+      "employeeErrorCount": 4,
+      "licenseErrorCount": 5,
+      "reconciliationAllowed": false
+    }
+  }
+}

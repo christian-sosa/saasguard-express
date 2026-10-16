@@ -1,0 +1,19 @@
+PRUEBA DE ERRORES Y RECUPERACION
+
+Todos los datos son ficticios. Usar UN par de archivos por vez. No cargar las versiones con errores y corregidas juntas.
+
+A. ARCHIVOS CON ERRORES
+Cargar con_errores/nomina.csv y con_errores/licencias.csv. Dejar el costo por defecto vacio.
+La app debe impedir el cruce.
+Nomina: 5 filas, 4 observaciones de error. Fila 3: email invalido. Fila 4: estado Inactivo. Filas 5 y 6: mismo email con departamentos contradictorios.
+Licencias: 8 filas, 5 observaciones de error. Fila 3: costo negativo. Fila 4: costo con tres decimales. Filas 6 y 7: misma cuenta de Slack con costos contradictorios. Fila 9: email invalido.
+Los numeros de fila incluyen el encabezado. Una observacion por cada fila contradictoria es esperada.
+No hay resultado de conciliacion valido para estos archivos.
+
+B. ARCHIVOS CORREGIDOS
+Reemplazar AMBOS archivos por corregidos/nomina.csv y corregidos/licencias.csv. Confirmar nomina vigente y ejecutar.
+Resultado esperado: 4 personas, 7 licencias unicas, 4 coincidencias y 3 candidatas.
+Candidatas: ena@example.test (USD 15,50), firo@example.test (USD 0), gala@example.test (costo desconocido).
+Potencial mensual conocido: USD 15,50. Candidatas con costo conocido: 2. Costos desconocidos: 1.
+Una celda vacia es costo no informado. Cero es costo conocido. Al iniciar: checklist vacio.
+Una candidata requiere revision y no demuestra una baja. La app no cancela cuentas.

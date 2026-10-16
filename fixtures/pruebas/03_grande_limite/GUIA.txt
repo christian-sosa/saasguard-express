@@ -1,0 +1,16 @@
+PRUEBA GRANDE EN EL LIMITE ADMITIDO
+
+Todos los datos son ficticios.
+1. Cargar nomina.csv como nomina vigente (250 personas).
+2. Seleccionar JUNTOS los CUATRO CSV de licencias: google, slack, jira y zoom.
+3. Dejar el costo por defecto vacio, confirmar nomina vigente y ejecutar.
+
+Resultado esperado: 1.000 licencias unicas, 800 coincidencias y 200 candidatas.
+Cada proveedor aporta 250 licencias: 200 coincidentes y 50 candidatas.
+Candidatas: persona251@example.test a persona300@example.test por proveedor.
+Potencial mensual conocido: USD 1.875,00. Costos desconocidos: 0.
+Desglose: Google Workspace USD 500; Slack USD 250; Jira USD 375; Zoom USD 750.
+Los limites son globales: 250 filas de nomina y 1.000 filas de licencias entre TODOS los archivos. No hay duplicados ni conflictos.
+Las personas 201 a 250 estan en la nomina y no tienen licencias en este juego; eso no agrega candidatas.
+Al iniciar: checklist vacio. Confirmar fichas para probar exportaciones.
+Una candidata requiere revision humana; la app no cancela cuentas ni verifica bajas.

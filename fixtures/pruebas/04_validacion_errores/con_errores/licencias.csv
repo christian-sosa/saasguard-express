@@ -1,0 +1,9 @@
+﻿email,nombre,proveedor,plan,costo_mensual
+aria@example.test,Aria Ficticia,Slack,Prueba,12
+boro@example.test,Boro Ficticio,Slack,Prueba,-5
+ciro@example.test,Ciro Ficticio,Slack,Prueba,1.234
+dala@example.test,Dala Ficticia,Slack,Prueba,5
+ena@example.test,Ena Ficticia,Slack,Prueba,15.5
+ENA@EXAMPLE.TEST,Ena Ficticia,Slack,Prueba,16
+firo@example.test,Firo Ficticio,Slack,Prueba,0
+gala-sin-arroba,Gala Ficticia,Slack,Prueba,

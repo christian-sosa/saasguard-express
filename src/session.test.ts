@@ -15,7 +15,7 @@ class MemoryStorage implements Storage {
 }
 
 const run = (changes: Partial<PilotRun> = {}): PilotRun => ({
-  organizationCode: 'PILOTO_01', completedAt: '2026-10-02T12:00:00.000Z',
+  organizationCode: 'PILOTO_01', completedAt: '2026-10-03T10:00:00.000Z',
   candidateCount: 6, selectedCount: 2, ...changes,
 });
 
@@ -41,6 +41,7 @@ describe('local pilot aggregate privacy and validity', () => {
     ]));
     expect(readPilotRuns()).toEqual([run()]);
     expect(Object.keys(readPilotRuns()[0])).toEqual(['organizationCode', 'completedAt', 'candidateCount', 'selectedCount']);
+    expect(JSON.parse(storage.getItem(KEY)!)).toEqual([run()]);
   });
 
   it('persists no personnel fields from the new input or previously stored records', () => {
@@ -58,6 +59,7 @@ describe('local pilot aggregate privacy and validity', () => {
   ])('handles corrupt or unknown localStorage content gracefully: %s', (text) => {
     storage.setItem(KEY, text);
     expect(readPilotRuns()).toEqual([]);
+    expect(storage.getItem(KEY)).toBeNull();
   });
 
   it('handles unavailable storage gracefully when reading', () => {
@@ -105,6 +107,43 @@ describe('local pilot aggregate privacy and validity', () => {
     for (const value of [null, [], {}, { ...run(), completedAt: 123 }, { ...run(), organizationCode: 123 }]) {
       expect(() => savePilotRun(value as PilotRun)).toThrow();
     }
+  });
+
+  it('removes previous Argentina days from storage, even within the last 24 hours', () => {
+    vi.setSystemTime(new Date('2026-10-03T04:00:00.000Z'));
+    const today = run({ completedAt: '2026-10-03T03:00:00.000Z' });
+    storage.setItem(KEY, JSON.stringify([
+      run({ completedAt: '2026-10-02T12:00:00.000Z' }),
+      run({ completedAt: '2026-10-03T02:59:59.999Z' }),
+      today,
+    ]));
+    storage.setItem('unrelated:setting', 'keep');
+    expect(readPilotRuns()).toEqual([today]);
+    expect(JSON.parse(storage.getItem(KEY)!)).toEqual([today]);
+    expect(storage.getItem('unrelated:setting')).toBe('keep');
+    expect(() => savePilotRun(run({ completedAt: '2026-10-03T02:59:59.999Z' }))).toThrow(/hoy en Argentina/);
+  });
+
+  it('deletes the pilot key at Argentina midnight on the next read, without expiring at UTC midnight', () => {
+    vi.setSystemTime(new Date('2026-10-03T23:59:59.999Z'));
+    savePilotRun(run());
+    vi.setSystemTime(new Date('2026-10-04T00:00:00.000Z'));
+    expect(readPilotRuns()).toEqual([run()]);
+    vi.setSystemTime(new Date('2026-10-04T02:59:59.999Z'));
+    expect(readPilotRuns()).toEqual([run()]);
+    vi.setSystemTime(new Date('2026-10-04T03:00:00.000Z'));
+    expect(readPilotRuns()).toEqual([]);
+    expect(storage.getItem(KEY)).toBeNull();
+  });
+
+  it('cleans old runs when the browser reopens days later and accepts a new run that day', () => {
+    savePilotRun(run());
+    vi.setSystemTime(new Date('2026-10-08T12:00:00.000Z'));
+    expect(readPilotRuns()).toEqual([]);
+    expect(storage.getItem(KEY)).toBeNull();
+    const today = run({ completedAt: '2026-10-08T12:00:00.000Z' });
+    savePilotRun(today);
+    expect(readPilotRuns()).toEqual([today]);
   });
 
   it('keeps the most recent 100 valid entries while retaining repeat uses of an organization', () => {

@@ -1,0 +1,13 @@
+PRUEBA SIMPLE
+
+Todos los datos son ficticios. Los emails usan example.test.
+1. Cargar nomina.csv como nomina vigente.
+2. Cargar licencias_google.csv como licencias.
+3. Dejar el costo por defecto vacio y confirmar que la nomina contiene personal vigente.
+4. Ejecutar el cruce.
+
+Resultado esperado: 5 personas, 8 licencias unicas, 5 coincidencias y 3 cuentas candidatas a revision.
+Potencial mensual conocido: USD 24,50. Costos desconocidos: 0.
+Candidatas: fiona@example.test (12), galo@example.test (8,50), hana@example.test (4).
+Al comenzar no hay cuentas confirmadas para el checklist. Revisar una ficha, asignar un responsable y confirmar su inclusion para probar la exportacion.
+Una candidata no demuestra una baja: requiere revision humana. La app no cancela cuentas.

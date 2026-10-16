@@ -62,18 +62,33 @@ Los reportes y snapshots pueden contener nombres, emails y notas de revisión. S
 
 El botón carga la demo integrada; las plantillas son otro conjunto pequeño para repetir el recorrido mediante carga manual. Ambos incluyen Google Workspace, Slack y Jira con precios de prueba, sin representar contratos reales. Las cifras diferentes son esperadas. La [guía de demo](docs/guia-demo.md) muestra cómo revisar ambos casos.
 
+## Juegos de CSV para pruebas manuales
+
+Los cuatro juegos de [fixtures/pruebas](fixtures/pruebas/LEEME.txt) contienen únicamente datos sintéticos. La carpeta [pruebas en Google Drive](https://drive.google.com/drive/folders/1i1J6-JrD6jGmc6fOfWLYmAj0pHw1pOBO) permite compartirlos para probar la página publicada. Cada juego incluye `GUIA.txt`; no deben mezclarse archivos de juegos distintos.
+
+| Juego | Personas RRHH | Licencias | Candidatos | Potencial mensual conocido |
+|---|---:|---:|---:|---:|
+| 01_simple | 5 | 8 | 3 | USD 24,50 |
+| 02_mediano_multiplataforma | 30 | 90 | 30 | USD 226,00 |
+| 03_grande_limite | 250 | 1.000 | 200 | USD 1.875,00 |
+| 04_validacion_errores, versión corregida | 4 | 7 | 3 | USD 15,50 |
+
+En el cuarto juego se cargan primero los CSV de `con_errores`, que deben bloquear el cruce; luego se reemplazan por los de `corregidos`. Los juegos mediano y corregido incluyen costos desconocidos y costos cero para comprobar que se distinguen. El juego grande alcanza los límites globales admitidos: cargar juntos sus cuatro CSV de licencias. El [archivo de resultados esperados](fixtures/pruebas/expected-results.json) registra los conteos e importes exactos, incluido el caso inválido. Los emails válidos usan `example.test`; no hay datos de personal real.
+
 ## Datos y límites del prototipo
 
-Los CSV, las cuentas y las decisiones viven en memoria de la página. Se descartan al reiniciar la página, cerrar y borrar la auditoría o alcanzar 24 horas de sesión. Los archivos ya descargados permanecen en el equipo del usuario.
+Actualización del 16/10/2026: los CSV, las cuentas y las decisiones viven en memoria de la página. Se descartan al recargar, cerrar y borrar la auditoría o alcanzar la próxima medianoche de Argentina (00:00 de `America/Argentina/Buenos_Aires`, actualmente 03:00 UTC), con un máximo absoluto de 24 horas desde el inicio. La actividad no renueva ese plazo. Esta regla reemplaza la conservación anterior de hasta 24 horas sin corte diario.
 
-El registro del piloto es la única persistencia local adicional: localStorage conserva como máximo 100 ejecuciones con código de organización, fecha y conteos de candidatos/seleccionados, sin nómina, nombres ni emails. Permanece al cerrar una auditoría hasta borrarlo con su propia acción. Es un registro de un solo navegador, no una base compartida ni una medición de PMF; la demo integrada no se registra como piloto real.
+El registro del piloto es la única persistencia adicional en el navegador: `localStorage` conserva como máximo 100 ejecuciones del día de Argentina con código de organización, fecha y conteos de candidatos/seleccionados, sin nómina, nombres ni emails. El cierre manual de la auditoría conserva esos agregados del día, que pueden borrarse con su propia acción y vencen igualmente a medianoche. Al leerlos, la app elimina de esa clave los registros anteriores al día actual, los futuros y los inválidos. Es un registro de un solo navegador, no una base compartida ni una medición de PMF; la demo integrada no se registra como piloto real.
 
-No hay backend, cuentas de usuarios ni permisos de rol autenticados. Los responsables escritos son datos de revisión, no autorizaciones. No se implementan OAuth, APIs de proveedores, bajas automáticas, IA ni pagos. La ejecución local no incluye SLA ni una evaluación de seguridad de producción. El tiempo informado corresponde al cruce local; para evaluar el objetivo del recorrido completo hay que registrar también el entorno y la medición correspondiente.
+La limpieza se ejecuta en el navegador: si la pestaña está activa, se programa para medianoche; si estaba suspendida, se comprueba al volver a ella o al intentar una operación. Si el navegador estaba cerrado, los agregados vencidos se eliminan al abrir la app nuevamente. No hay un proceso nocturno ni una base de datos en Vercel o Supabase. Vercel entrega la aplicación; los datos de trabajo permanecen en cada navegador. Los CSV originales y los reportes o snapshots descargados permanecen en el equipo del usuario hasta que éste los borre.
+
+No hay backend, cuentas de usuarios ni permisos de rol autenticados. Los responsables escritos son datos de revisión, no autorizaciones. No se implementan OAuth, APIs de proveedores, bajas automáticas, IA ni pagos. Este MVP no incluye SLA ni una evaluación de seguridad de producción. El tiempo informado corresponde al cruce en el navegador; para evaluar el objetivo del recorrido completo hay que registrar también el entorno y la medición correspondiente.
 
 ## Decisión técnica y próximos pasos
 
-El usuario eligió React + TypeScript y un repositorio privado para avanzar sin contratar servicios. Es una decisión provisional distinta del stack No-Code / Low-Code de los entregables anteriores; el acuerdo del equipo sigue pendiente. La [decisión tecnológica](docs/decision-tecnologica.md) explica la diferencia y los límites gratuitos de las alternativas. No se modificaron los documentos anteriores del Drive ni se recalcularon sus costos.
+El usuario eligió React + TypeScript y un repositorio privado para avanzar sin contratar servicios. La elección fue provisional el 03/10; los avances del 08/10 y 16/10 ya documentan React/TypeScript, procesamiento en navegador y ausencia de autenticación como el alcance adoptado del MVP. La [decisión tecnológica](docs/decision-tecnologica.md) conserva ese historial y explica la diferencia con la propuesta No-Code / Low-Code original. Los entregables históricos de Drive y sus proyecciones económicas no se reescriben mediante este cambio.
 
 No-code configura interfaz, datos y reglas en herramientas visuales; low-code combina ese trabajo con módulos de código o integraciones. Esta app de React es desarrollo con código, aunque siga el diseño de Figma. La elección aporta control del código, versionado, pruebas y ejecución local; requiere mantener dependencias y lógica, y deja de usar el editor visual y los servicios integrados de datos/workflows del stack original. No incorpora automáticamente autenticación, base compartida ni workflows cloud.
 
-Si el equipo necesita operación compartida, el siguiente paso es acordar un backend con autenticación, permisos y tratamiento del dato, y luego revisar despliegue, costos y pruebas. También puede evaluarse una alternativa low-code que combine una interfaz o automatización visual con el motor de conciliación. Cualquiera de esas opciones exige un acuerdo nuevo; no está incluida en este MVP local.
+Si el equipo necesita operación compartida, el siguiente paso es acordar un backend con autenticación, permisos y tratamiento del dato, y luego revisar despliegue, costos y pruebas. También puede evaluarse una alternativa low-code que combine una interfaz o automatización visual con el motor de conciliación. Cualquiera de esas opciones exige un acuerdo nuevo; no está incluida en este MVP actual.

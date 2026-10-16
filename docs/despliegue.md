@@ -6,9 +6,19 @@ Producción: [saasguard-express.vercel.app](https://saasguard-express.vercel.app
 
 ## Datos y alcance
 
-Los CSV, candidatos, responsables y notas permanecen en la memoria de la pestaña y se eliminan al cerrar la auditoría, recargar o vencer la sesión de 24 horas. Los archivos descargados permanecen en el equipo. El registro agregado del piloto sigue siendo local a un navegador y puede borrarse por separado; no es un historial compartido.
+Los CSV, candidatos, responsables y notas permanecen en la memoria de la pestaña y se eliminan al cerrar la auditoría, recargar o llegar a la próxima medianoche de Argentina. Los archivos originales y los reportes o snapshots descargados permanecen en el equipo. El registro agregado del piloto sigue siendo de un solo navegador y puede borrarse por separado; también vence diariamente y no es un historial compartido.
 
 Supabase no se utiliza en esta publicación. Fábrica de Fútbol tiene usuarios reales en otro proyecto Supabase Free; SaaSGuard no cambia sus tablas, Auth, claves ni configuración. Si se incorpora una necesidad concreta de cuentas o persistencia compartida, se diseñará en un proyecto independiente gratuito si hay cupo, junto con las reglas de acceso y conservación de datos. No se deben conectar las dos aplicaciones por comodidad.
+
+## Actualización de retención y pruebas — 16/10/2026
+
+La regla anterior permitía hasta 24 horas de sesión. Ahora cada auditoría vence a la próxima medianoche de `America/Argentina/Buenos_Aires` (00:00 de Argentina, actualmente 03:00 UTC), manteniendo un máximo absoluto de 24 horas. Las operaciones no extienden el vencimiento. La app programa el cierre cuando está abierta y vuelve a validar la sesión al reactivar la pestaña y antes de las operaciones de carga, revisión y exportación.
+
+Los agregados del piloto en `localStorage` se limitan al día actual de Argentina, hasta 100 registros. Leer la clave elimina registros de días anteriores, futuros o inválidos. La limpieza nocturna permanece programada después de cerrar manualmente la auditoría. Si la pestaña estaba suspendida, se limpia al volver; si el navegador estaba cerrado, los agregados vencidos se eliminan al abrir nuevamente la app. Esto funciona en el navegador y no requiere una base de datos, tarea cron, API ni credenciales en Vercel o Supabase.
+
+Los cuatro juegos sintéticos están en [fixtures/pruebas](../fixtures/pruebas/LEEME.txt) y en la carpeta [pruebas de Drive](https://drive.google.com/drive/folders/1i1J6-JrD6jGmc6fOfWLYmAj0pHw1pOBO). Incluyen un caso pequeño, uno mediano con varios proveedores, uno de 250 personas y 1.000 licencias, y uno con errores más su versión corregida. Cada carpeta tiene instrucciones; los conteos e importes están en [expected-results.json](../fixtures/pruebas/expected-results.json). Usar sólo datos sintéticos para comprobar el dominio público.
+
+Antes de publicar esta actualización, comprobar el límite exacto de 02:59:59.999 a 03:00:00 UTC, el cierre de una auditoría activa, la eliminación de agregados también tras un cierre manual y la limpieza al reabrir o reactivar la app. Verificar que el cambio de día UTC a las 00:00 UTC no venza una sesión del mismo día de Argentina, y que los costos desconocidos sigan distinguiéndose de cero. La simulación de medianoche en las pruebas no representa un proceso ejecutado por el servidor.
 
 ## Configuración reproducible
 

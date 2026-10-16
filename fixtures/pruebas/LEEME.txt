@@ -1,0 +1,13 @@
+PRUEBAS SAASGUARD
+
+Cuatro juegos independientes de datos sinteticos para https://saasguard-express.vercel.app/
+No mezclar las nominas ni las licencias de juegos diferentes.
+
+01_simple: 5 personas, 8 licencias, 3 candidatas.
+02_mediano_multiplataforma: 30 personas, 90 licencias, 30 candidatas.
+03_grande_limite: 250 personas, 1.000 licencias, 200 candidatas.
+04_validacion_errores: primero observar bloqueos y luego reemplazar por el par corregido (4 personas, 7 licencias, 3 candidatas).
+
+Cada carpeta incluye GUIA.txt con instrucciones y resultados exactos.
+Todos los nombres son ficticios y todos los emails validos usan example.test. No hay datos de usuarios, contrasenas, sueldos ni archivos reales. Los costos se expresan en USD mensuales por cuenta.
+El responsable de revisar debe confirmar las candidatas: no equivalen a bajas comprobadas ni a ahorro realizado. Los archivos que descargues permanecen en tu equipo hasta que los borres.

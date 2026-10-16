@@ -1,4 +1,5 @@
 import Papa from 'papaparse'
+import { nextArgentinaMidnight } from './retention'
 
 /** Pure domain functions. No persistence, network calls, or personnel-data logging. */
 export interface Issue {
@@ -453,10 +454,18 @@ function epoch(value: Timestamp): number {
   return new Date(parsed).toISOString() === value ? parsed : Number.NaN
 }
 
+/** The deadline never moves with activity; midnight in Argentina can shorten the 24-hour maximum. */
+export function sessionExpiresAt(createdAt: Timestamp): number {
+  const created = epoch(createdAt)
+  return Math.min(created + SESSION_MAX_AGE_MS, nextArgentinaMidnight(created))
+}
+
 export function isExpired(createdAt: Timestamp, now: Timestamp = Date.now()): boolean {
   const created = epoch(createdAt)
   const current = epoch(now)
-  return !Number.isFinite(created) || !Number.isFinite(current) || created > current || current - created >= SESSION_MAX_AGE_MS
+  const deadline = sessionExpiresAt(createdAt)
+  return !Number.isFinite(created) || !Number.isFinite(current) || !Number.isFinite(deadline)
+    || created > current || current >= deadline
 }
 
 function record(value: unknown): value is Record<string, unknown> { return typeof value === 'object' && value !== null && !Array.isArray(value) }

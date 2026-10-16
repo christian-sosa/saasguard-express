@@ -1,0 +1,15 @@
+PRUEBA MEDIANA CON TRES PLATAFORMAS
+
+Todos los datos son ficticios.
+1. Cargar nomina.csv como nomina vigente.
+2. Seleccionar JUNTOS licencias_google.csv y licencias_slack_jira.csv como licencias.
+3. Dejar el costo por defecto vacio. El proveedor se toma de cada fila. Confirmar nomina vigente y ejecutar.
+
+Resultado esperado: 30 personas, 90 licencias unicas, 60 coincidencias y 30 candidatas.
+Google Workspace, Slack y Jira: 30 licencias y 10 candidatas por proveedor.
+Las candidatas son persona031@example.test a persona040@example.test en cada proveedor.
+Hay 3 candidatas con costo cero (persona031 por proveedor) y 3 con costo desconocido (persona032 por proveedor). Cero es un valor conocido; una celda vacia no significa cero.
+Potencial mensual conocido: USD 226,00. Candidatas con costo conocido: 27.
+Los espacios exteriores y las mayusculas de algunos emails deben normalizarse y no generar falsas candidatas.
+Al iniciar: checklist vacio. Se puede filtrar por proveedor y revisar fichas.
+Una candidata requiere revision; no demuestra una baja ni ahorro realizado.

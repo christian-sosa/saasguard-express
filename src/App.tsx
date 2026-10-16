@@ -35,6 +35,7 @@ import {
   createSnapshot,
   compareSnapshots,
   isExpired,
+  sessionExpiresAt,
   type Candidate,
   type CsvTable,
   type Issue,
@@ -44,6 +45,7 @@ import {
 import { exportChecklistXlsx, exportChecklistPdf } from "./exports";
 import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
+import { nextArgentinaMidnight } from "./retention";
 import { auditStamp, providerSummary, reviewText } from "./labels";
 
 type Upload = { name: string; table: CsvTable; emailHeader: string };
@@ -323,6 +325,8 @@ export function App() {
     setNote("");
     setAssignee("");
     setEditCost("");
+    setPilotCode("");
+    setPilotSaved(false);
     setError("");
     setBusy(false);
     setModal(null);
@@ -333,16 +337,27 @@ export function App() {
     if (saasInput.current) saasInput.current.value = "";
   }
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout>;
     const check = () => {
-      if (isExpired(createdAt) && page !== "closed")
+      clearTimeout(timer);
+      const now = Date.now();
+      // Pilot retention remains active after manually closing an audit.
+      setPilotRuns(readPilotRuns());
+      const expired = isExpired(createdAt, now);
+      if (expired && page !== "closed")
         clearAudit(
-          "La sesión alcanzó las 24 horas. Los datos de trabajo se eliminaron.",
+          "La sesión venció: los datos de trabajo se eliminaron. Cada auditoría termina, como máximo, a las 00:00 de Argentina.",
         );
+      const nextCheck = Math.min(
+        nextArgentinaMidnight(now),
+        !expired && page !== "closed" ? sessionExpiresAt(createdAt) : Infinity,
+      );
+      timer = setTimeout(
+        check,
+        Number.isFinite(nextCheck) ? Math.max(1, nextCheck - now) : 60000,
+      );
     };
-    const timer = setTimeout(
-      check,
-      Math.max(0, Date.parse(createdAt) + 86400000 - Date.now()),
-    );
+    check();
     document.addEventListener("visibilitychange", check);
     return () => {
       clearTimeout(timer);
@@ -1033,8 +1048,10 @@ export function App() {
           </Button>
           <div className="privacy-strip">
             <IconShieldCheck size={19} /> Sin contraseñas ni conexión a tus
-            plataformas: los CSV se procesan en este navegador y se borran al
-            cerrar la auditoría o a las 24 horas.
+            plataformas: los CSV se procesan en este navegador. Los datos de la
+            app se borran al cerrar la auditoría o a las 00:00 de Argentina;
+            si la pestaña estaba suspendida, al volver. Las descargas permanecen
+            en tu equipo.
           </div>
         </div>
       )}
@@ -1641,8 +1658,9 @@ export function App() {
             sesión. Descargá el checklist antes de cerrar si querés conservarlo.
           </p>
           <p className="muted">
-            Los archivos ya descargados y los conteos del piloto guardados
-            aparte permanecen en tu equipo.
+            Los archivos ya descargados permanecen en tu equipo. Los conteos del
+            piloto se conservan sólo durante el día de Argentina y se limpian a
+            las 00:00, o al volver a abrir la app si estaba cerrada o suspendida.
           </p>
           <div className="review-actions">
             <Button variant="danger" onClick={() => clearAudit()}>
@@ -1778,7 +1796,9 @@ export function App() {
         >
           <p>
             Guardamos sólo un código de organización, fecha y conteos en este
-            navegador. No guardamos emails, nombres ni archivos.
+            navegador, hasta las 00:00 de Argentina. Si la app está cerrada o
+            suspendida, se limpian al volver. No guardamos emails, nombres ni
+            archivos.
           </p>
           <label className="block-label">
             Código de organización

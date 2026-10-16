@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compareSnapshots, costToCents, createSnapshot, filterCandidates, isExpired, licenseId,
+  compareSnapshots, costToCents, createSnapshot, filterCandidates, isExpired, sessionExpiresAt, licenseId,
   normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, pickEmailHeader, reconcile, SESSION_MAX_AGE_MS,
   suggestEmailHeader, summarize, validateEmployees, validateLicenseFiles, validateLicenses, validateSnapshot,
   type Candidate, type License,
@@ -276,15 +276,32 @@ describe('snapshots completos para comparación posterior', () => {
   })
 })
 
-describe('sesión de máximo 24 horas y volumen de referencia', () => {
+describe('sesión hasta medianoche de Argentina, máximo 24 horas y volumen de referencia', () => {
   it('expira en el límite exacto y trata fechas inválidas o futuras como expiradas', () => {
-    const created = Date.parse('2026-10-03T10:00:00.000Z')
+    const created = Date.parse('2026-10-03T03:00:00.000Z')
     expect(isExpired(created, created + SESSION_MAX_AGE_MS - 1)).toBe(false)
     expect(isExpired(created, created + SESSION_MAX_AGE_MS)).toBe(true)
     expect(isExpired('nunca', created)).toBe(true)
     expect(isExpired('2026-02-31T00:00:00.000Z', created)).toBe(true)
     expect(isExpired(created + 1, created)).toBe(true)
     expect(isExpired(created, Number.NaN)).toBe(true)
+    expect(isExpired(Number.MAX_VALUE, Number.MAX_VALUE)).toBe(true)
+  })
+
+  it('vence exactamente a las 03:00 UTC (00:00 de Argentina), aunque lleve sólo un minuto abierta', () => {
+    const created = '2026-10-04T02:59:00.000Z'
+    expect(sessionExpiresAt(created)).toBe(Date.parse('2026-10-04T03:00:00.000Z'))
+    expect(isExpired(created, '2026-10-04T02:59:59.999Z')).toBe(false)
+    expect(isExpired(created, '2026-10-04T03:00:00.000Z')).toBe(true)
+    expect(isExpired(created, '2026-10-05T12:00:00.000Z')).toBe(true)
+  })
+
+  it('no vence en la medianoche UTC y no renueva el plazo al consultar la sesión', () => {
+    const created = '2026-10-03T23:00:00.000Z'
+    expect(isExpired(created, '2026-10-04T00:00:00.000Z')).toBe(false)
+    expect(isExpired(created, '2026-10-04T02:59:59.999Z')).toBe(false)
+    expect(isExpired(created, '2026-10-04T03:00:00.000Z')).toBe(true)
+    expect(sessionExpiresAt(created)).toBe(Date.parse('2026-10-04T03:00:00.000Z'))
   })
 
   it('valida y concilia correctamente 250 personas y 1000 cuentas en menos de 60 segundos', () => {
