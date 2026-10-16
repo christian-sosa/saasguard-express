@@ -277,9 +277,9 @@ export function App() {
   const [note, setNote] = useState("");
   const [assignee, setAssignee] = useState("");
   const [editCost, setEditCost] = useState("");
-  const [modal, setModal] = useState<"close" | "compare" | "pilot" | null>(
-    null,
-  );
+  const [modal, setModal] = useState<
+    "close" | "restart" | "compare" | "pilot" | null
+  >(null);
   const [snapshots, setSnapshots] = useState<[unknown | null, unknown | null]>([
     null,
     null,
@@ -300,12 +300,27 @@ export function App() {
   const uploadEpoch = useRef({ hr: 0, saas: 0 });
   const liveCandidates = useRef(candidates);
   liveCandidates.current = candidates;
+  const hasLoadData = Boolean(
+    hr ||
+    saas.length ||
+    organization ||
+    defaultCost ||
+    currentRoster ||
+    busy ||
+    error ||
+    provider !== "Google Workspace",
+  );
 
-  function clearAudit(message = "") {
+  function clearAudit(
+    message = "",
+    destination: "load" | "closed" = page === "load" ? "load" : "closed",
+  ) {
     sessionEpoch.current++;
     snapshotEpoch.current++;
     setClosedCount(
-      liveCandidates.current.filter((c) => c.review === "confirmed").length,
+      destination === "closed"
+        ? liveCandidates.current.filter((c) => c.review === "confirmed").length
+        : 0,
     );
     setHr(null);
     setCurrentRoster(false);
@@ -319,6 +334,8 @@ export function App() {
     setSearch("");
     setOrganization("");
     setDefaultCost("");
+    setProvider("Google Workspace");
+    setElapsedMs(0);
     setProviderFilter("all");
     setReviewFilter("all");
     setSnapshotProvider("");
@@ -330,7 +347,8 @@ export function App() {
     setError("");
     setBusy(false);
     setModal(null);
-    setPage("closed");
+    if (destination === "load") setCreatedAt(new Date().toISOString());
+    setPage(destination);
     setNotice(message);
     setIsDemo(false);
     if (hrInput.current) hrInput.current.value = "";
@@ -744,9 +762,11 @@ export function App() {
               </small>
             </div>
           </div>
-          {page !== "closed" && (
+          {(page === "results" ||
+            page === "checklist" ||
+            (page === "load" && hasLoadData)) && (
             <Button variant="ghost" onClick={() => setModal("close")}>
-              Cerrar auditoría
+              {page === "load" ? "Descartar carga" : "Cerrar auditoría"}
             </Button>
           )}
         </div>
@@ -1049,9 +1069,9 @@ export function App() {
           <div className="privacy-strip">
             <IconShieldCheck size={19} /> Sin contraseñas ni conexión a tus
             plataformas: los CSV se procesan en este navegador. Los datos de la
-            app se borran al cerrar la auditoría o a las 00:00 de Argentina;
-            si la pestaña estaba suspendida, al volver. Las descargas permanecen
-            en tu equipo.
+            app se borran al cerrar la auditoría o a las 00:00 de Argentina; si
+            la pestaña estaba suspendida, al volver. Las descargas permanecen en
+            tu equipo.
           </div>
         </div>
       )}
@@ -1240,8 +1260,8 @@ export function App() {
                 {filtered.length} de{" "}
                 {counted(candidates.length, "candidata", "candidatas")} ·{" "}
                 {counted(employees.length, "colaborador", "colaboradores")} ·{" "}
-                {counted(licenses.length, "licencia única", "licencias únicas")} ·{" "}
-                {stats.matchedCount}{" "}
+                {counted(licenses.length, "licencia única", "licencias únicas")}{" "}
+                · {stats.matchedCount}{" "}
                 {countLabel(
                   stats.matchedCount,
                   "coincide con la nómina",
@@ -1250,9 +1270,7 @@ export function App() {
               </small>
               {matched.length > 0 && (
                 <details className="matched-list">
-                  <summary>
-                    Coinciden con la nómina ({matched.length})
-                  </summary>
+                  <summary>Coinciden con la nómina ({matched.length})</summary>
                   <ul>
                     {matched.map((l) => (
                       <li key={l.id}>
@@ -1319,7 +1337,7 @@ export function App() {
               <IconClipboardCheck size={19} /> Ver checklist de bajas{" "}
               <span className="button-count">{selected.length}</span>
             </Button>
-            <Button variant="secondary" onClick={() => setModal("close")}>
+            <Button variant="secondary" onClick={() => setModal("restart")}>
               <IconRefresh size={19} /> Nueva auditoría
             </Button>
             <Button variant="ghost" onClick={() => setModal("compare")}>
@@ -1648,26 +1666,49 @@ export function App() {
           </p>
         </Modal>
       )}
-      {modal === "close" && (
+      {(modal === "close" || modal === "restart") && (
         <Modal
-          title="Cerrar auditoría y eliminar datos"
+          title={
+            page === "load"
+              ? "Descartar carga"
+              : modal === "restart"
+                ? "Empezar una nueva auditoría"
+                : "Cerrar auditoría y eliminar datos"
+          }
           onClose={() => setModal(null)}
         >
           <p>
-            Se eliminarán los CSV, los resultados y las decisiones de esta
-            sesión. Descargá el checklist antes de cerrar si querés conservarlo.
+            {page === "load"
+              ? "Se descartarán los archivos y los datos ingresados. Vas a permanecer en el paso de carga para empezar de nuevo."
+              : "Se eliminarán los CSV, los resultados y las decisiones de esta sesión. Descargá el checklist antes de continuar si querés conservarlo."}
           </p>
           <p className="muted">
             Los archivos ya descargados permanecen en tu equipo. Los conteos del
             piloto se conservan sólo durante el día de Argentina y se limpian a
-            las 00:00, o al volver a abrir la app si estaba cerrada o suspendida.
+            las 00:00, o al volver a abrir la app si estaba cerrada o
+            suspendida.
           </p>
           <div className="review-actions">
-            <Button variant="danger" onClick={() => clearAudit()}>
-              <IconTrash size={18} /> Cerrar y borrar datos
+            <Button
+              variant="danger"
+              onClick={() =>
+                clearAudit(
+                  page === "load"
+                    ? "Carga descartada. Podés cargar nuevos archivos."
+                    : "",
+                  page === "load" || modal === "restart" ? "load" : "closed",
+                )
+              }
+            >
+              <IconTrash size={18} />{" "}
+              {page === "load"
+                ? "Descartar carga"
+                : modal === "restart"
+                  ? "Borrar e iniciar otra"
+                  : "Cerrar y borrar datos"}
             </Button>
             <Button variant="ghost" onClick={() => setModal(null)}>
-              Seguir revisando
+              {page === "load" ? "Seguir cargando" : "Seguir revisando"}
             </Button>
           </div>
         </Modal>

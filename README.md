@@ -39,6 +39,8 @@ Los ensayos realizados están en [resultado de validación](docs/resultado-valid
 
 El recorrido principal implementa las funciones de HU01–HU15: descargar ejemplos, cargar CSV, elegir la columna de email, validar, conciliar, filtrar candidatos, revisar cada caso con responsable y nota, corregir costos, seleccionar un checklist y exportar Excel/PDF. El cierre elimina los archivos y decisiones de la sesión de la app.
 
+La pantalla de carga vacía no ofrece un cierre. Si ya se ingresaron datos o archivos, **Descartar carga** los elimina y mantiene el paso de carga. Después del cruce, **Cerrar auditoría** muestra el cierre y **Nueva auditoría** permite borrar la anterior y volver directamente a cargar archivos, previa confirmación.
+
 También hay herramientas de evolución posterior al MVP: carga de varios archivos SaaS con validación conjunta (HU16), snapshots JSON completos por proveedor para comparar períodos (HU17), y un registro agregado local del piloto (HU18). Que estas herramientas existan no acredita haber ejecutado un piloto comercial ni haber cumplido sus objetivos de recurrencia.
 
 | Regla | Comportamiento |

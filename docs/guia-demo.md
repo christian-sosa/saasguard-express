@@ -16,6 +16,8 @@ La app debe estar abierta en el navegador local. La preparación técnica está 
 
 5. **Cerrar — 30 segundos.** Pulsar Cerrar auditoría y, después de conservar las descargas necesarias, Cerrar y borrar datos. La app debe quedar sin archivos, resultados ni decisiones recuperables de esa auditoría. Los archivos descargados permanecen fuera de la app. Empezar una nueva auditoría permite repetir el recorrido.
 
+Para comprobar la navegación inicial, abrir la app vacía: no debe aparecer Cerrar auditoría. Cargar la demo sin ejecutar el cruce y pulsar **Descartar carga**; cancelar debe conservar los datos y confirmar debe limpiar la carga sin pasar a Cierre. Desde resultados, **Nueva auditoría** debe pedir confirmación y volver directamente a una carga vacía. Una auditoría con cero candidatos también puede cerrarse normalmente.
+
 ## Repetir mediante carga manual de las plantillas
 
 Descargar la plantilla de nómina y la de licencias desde la pantalla de carga, o usar los archivos incluidos en public/ejemplos. Cargar nomina.csv en RRHH y licencias.csv en SaaS. Confirmar que la nómina representa personal vigente y dejar el costo por defecto vacío para conservar el candidato sin precio del ejemplo. Si hace falta, elegir email como columna de identidad.
