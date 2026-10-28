@@ -15,7 +15,7 @@ export interface ChecklistRow {
   name: string;
   originalEmail: string;
   normalizedEmail: string;
-  costUsd: number | 'No informado';
+  costUsd: number | 'Sin informar';
   humanReview: 'Confirmada para checklist';
   status: 'Pendiente de revisión de baja';
   assignee: string;
@@ -42,7 +42,7 @@ export function buildChecklistRows(candidates: readonly Candidate[]): ChecklistR
       name: candidate.name,
       originalEmail: candidate.originalEmail ?? candidate.email,
       normalizedEmail: candidate.email,
-      costUsd: cents === null ? 'No informado' : cents / 100,
+      costUsd: cents === null ? 'Sin informar' : cents / 100,
       humanReview: 'Confirmada para checklist',
       status: 'Pendiente de revisión de baja',
       assignee: candidate.assignee ?? '',
@@ -58,7 +58,7 @@ function checklistSummary(rows: readonly ChecklistRow[]) {
     selectedCount: rows.length,
     totalPotentialCents: cents,
     totalPotentialUsd: cents / 100,
-    unknownCostCount: rows.filter((row) => row.costUsd === 'No informado').length,
+    unknownCostCount: rows.filter((row) => row.costUsd === 'Sin informar').length,
   };
 }
 

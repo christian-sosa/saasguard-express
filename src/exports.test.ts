@@ -64,7 +64,7 @@ describe('checklist export', () => {
     expect(table[0]).toEqual(['Proveedor', 'Plan', 'Nombre', 'Email original', 'Email normalizado',
       'Costo mensual (USD)', 'Revisión humana', 'Estado', 'Responsable operativo', 'Nota']);
     expect(table).toHaveLength(5);
-    expect(table[3][5]).toBe('No informado');
+    expect(table[3][5]).toBe('Sin informar');
     expect(table[4][5]).toBe(0);
     expect(workbook.Sheets.Checklist.F2.t).toBe('n');
     expect(workbook.Sheets.Checklist.F4.t).toBe('s');
@@ -95,9 +95,9 @@ describe('checklist export', () => {
     expect(sourceWorkbook.Sheets.Resumen.B2.v).toBe(organization);
     expect(sourceWorkbook.Sheets.Resumen.B2.t).toBe('s');
     const workbook = decode(sourceWorkbook);
-    // SheetJS normalizes CRLF to LF when reading XLSX; the source cell stays literal and unchanged.
+    // Some SheetJS releases normalize CRLF to LF when reading XLSX; either way the text stays literal.
     const decodedText = (value: string) => value.replace(/\r\n/g, '\n');
-    expect(workbook.Sheets.Resumen.B2.v).toBe(decodedText(organization));
+    expect(decodedText(workbook.Sheets.Resumen.B2.v as string)).toBe(decodedText(organization));
     expect(workbook.Sheets.Resumen.B2.t).toBe('s');
     for (const sheet of [...Object.values(sourceWorkbook.Sheets), ...Object.values(workbook.Sheets)]) {
       for (const [address, cell] of Object.entries(sheet)) {
@@ -115,7 +115,7 @@ describe('checklist export', () => {
         expect(sourceCell.F).toBeUndefined();
         const cell = workbook.Sheets.Checklist[`${column}${index + 2}`];
         expect(cell.t).toBe('s');
-        expect(cell.v).toBe(decodedText(payload));
+        expect(decodedText(cell.v as string)).toBe(decodedText(payload));
       }
     });
   });
@@ -138,7 +138,7 @@ describe('checklist export', () => {
     expect(text.includes('Checklistderevisión')).toBe(true);
     expect(text.includes('AnaPérez')).toBe(true);
     expect(text.includes('USD65,00')).toBe(true);
-    expect(text.includes('Noinformado')).toBe(true);
+    expect(text.includes('Sininformar')).toBe(true);
     expect(text.includes('NO_DEBE_APARECER')).toBe(false);
     expect(text.includes('Ahorropotencial.Revisiónybajamanualpendientes.')).toBe(true);
   });

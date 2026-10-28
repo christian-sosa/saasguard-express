@@ -1,0 +1,65 @@
+[
+  {
+    "profile": "IT (Ignacio)",
+    "task": "T1 Cargar nómina y dos exportaciones y cruzar",
+    "ok": true,
+    "seconds": 0.6,
+    "detail": "90 válidas, 60 coincidencias, 30 candidatas; 560 ms desde abrir la app"
+  },
+  {
+    "profile": "IT (Ignacio)",
+    "task": "T2 Filtrar Slack y buscar persona035",
+    "ok": true,
+    "seconds": 0.2,
+    "detail": "1 de 30 candidatas"
+  },
+  {
+    "profile": "IT (Ignacio)",
+    "task": "T3 Confirmar dos casos y descargar Excel",
+    "ok": true,
+    "seconds": 0.5,
+    "detail": "Excel con 2 filas; estado «Pendiente de revisión de baja»"
+  },
+  {
+    "profile": "People Ops (Florencia)",
+    "task": "T1 Dejar un caso para revisar con RRHH con nota",
+    "ok": true,
+    "seconds": 0.3,
+    "detail": "la fila muestra la nota y sigue fuera del checklist"
+  },
+  {
+    "profile": "People Ops (Florencia)",
+    "task": "T2 Mantener una cuenta como excepción",
+    "ok": true,
+    "seconds": 0.3,
+    "detail": "1 de 30 candidatas con estado «Mantener cuenta»"
+  },
+  {
+    "profile": "People Ops (Florencia)",
+    "task": "T3 Cerrar la auditoría y eliminar los datos",
+    "ok": true,
+    "seconds": 0.8,
+    "detail": "botón bloqueado hasta confirmar descargas: sí; sin datos visibles al cerrar"
+  },
+  {
+    "profile": "Finanzas (Gonzalo)",
+    "task": "T1 Completar un costo sin informar",
+    "ok": true,
+    "seconds": 0.3,
+    "detail": "antes: Ahorro potencial mensual (USD) = suma de 27 costos conocidos = US$ 226,00"
+  },
+  {
+    "profile": "Finanzas (Gonzalo)",
+    "task": "T2 Leer el ahorro potencial y su fórmula",
+    "ok": true,
+    "seconds": 0.1,
+    "detail": "Ahorro potencial mensual (USD) = suma de 28 costos conocidos = US$ 241,00. 2 cuentas tienen costo sin informar y no suman: no se reemplazan por cero ni por un promedio."
+  },
+  {
+    "profile": "Finanzas (Gonzalo)",
+    "task": "T3 Descargar el PDF del checklist",
+    "ok": true,
+    "seconds": 0.7,
+    "detail": "PDF de 14829 bytes; incluye la aclaración de ahorro potencial: sí"
+  }
+]

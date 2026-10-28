@@ -40,6 +40,22 @@ Antes de publicar esta actualización, comprobar el límite exacto de 02:59:59.9
 
 La política CSP permite scripts, estilos, fuentes e imágenes locales y bloquea conexiones de la app a APIs externas (`connect-src 'none'`). También restringe la inclusión en iframes, formularios y plugins. No se incorporan analytics ni envío de nóminas. Cambiar a una API o Supabase requiere revisar expresamente esa política.
 
+## Login con Google — 28/10/2026
+
+Decisión del 28/10/2026 (tarjeta «Decisión · Login con Google» del Sprint 2): la app pide iniciar sesión con usuario o email y contraseña, o con «Continuar con Google». Cada cuenta tiene un rol (Administración, IT, People Operations, Finanzas o Sólo lectura) que define qué puede hacer. Los usuarios de prueba y sus permisos están en [usuarios de prueba](usuarios-de-prueba.md).
+
+Para activar Google:
+
+1. En Google Cloud Console, crear un cliente OAuth de tipo «Aplicación web» (no tiene costo) y agregar como orígenes de JavaScript autorizados `http://localhost:5173` y `https://saasguard-express.vercel.app`.
+2. Cargar en Vercel (y en `.env.local` para desarrollo) `VITE_GOOGLE_CLIENT_ID` y `VITE_GOOGLE_ALLOWED_EMAILS` con las cuentas admitidas y su rol (`email:rol,email:rol`). Opcional: `VITE_GOOGLE_ALLOWED_DOMAIN` para admitir con sólo lectura cualquier cuenta de un dominio de Google Workspace. Los emails reales no se suben al repositorio.
+3. Volver a publicar: las variables se incorporan en el build.
+
+Sin `VITE_GOOGLE_CLIENT_ID` no aparece el botón de Google y sólo funciona el usuario y la contraseña.
+
+`vercel.json` permite en la CSP únicamente los recursos de `https://accounts.google.com/gsi/` y usa `Referrer-Policy: strict-origin-when-cross-origin`, que el botón de Google necesita.
+
+Límites: no hay backend. Los usuarios de prueba viajan dentro del código como hash SHA-256 con sal, el token de Google se valida en el navegador (emisor, audiencia, vencimiento, email verificado y cuenta admitida) sin verificar su firma, y los permisos se aplican en la interfaz. El login identifica a quien opera y ordena qué puede hacer; no es una autorización de servidor ni protege datos, que siguen en el navegador. Tras cinco intentos fallidos se bloquean los intentos por 30 segundos en esa pestaña. No se piden permisos sobre Google Workspace ni se leen usuarios por API. El perfil de la sesión vive en `sessionStorage` (8 horas para usuario y contraseña, el vencimiento del token para Google) y el rol se recalcula al leerlo; «Recordar mis datos» guarda sólo el usuario en `localStorage`.
+
 ## Operación y costo
 
 El despliegue usa Hobby para la demostración académica personal y no comercial, dentro de sus límites. No se contratan servicios pagos ni dominio. La dirección pública permite que otras personas ejecuten su propia sesión local; no permite ver la sesión de otro navegador ni otorga roles autenticados.

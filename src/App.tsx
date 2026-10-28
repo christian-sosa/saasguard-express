@@ -47,6 +47,8 @@ import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
 import { nextArgentinaMidnight } from "./retention";
 import { auditStamp, providerSummary, reviewText } from "./labels";
+import type { SessionUser } from "./auth";
+import { FULL_ACCESS, PERMISSIONS, ROLE_LABELS } from "./roles";
 
 type Upload = { name: string; table: CsvTable; emailHeader: string };
 type Page = "load" | "results" | "checklist" | "closed";
@@ -253,7 +255,13 @@ function CsvPreview({ upload }: { upload: Upload }) {
   );
 }
 
-export function App() {
+export function App({
+  user = null,
+  onSignOut = null,
+}: {
+  user?: SessionUser | null;
+  onSignOut?: (() => void) | null;
+} = {}) {
   const [page, setPage] = useState<Page>("load");
   const [hr, setHr] = useState<Upload | null>(null);
   const [currentRoster, setCurrentRoster] = useState(false);
@@ -277,9 +285,11 @@ export function App() {
   const [note, setNote] = useState("");
   const [assignee, setAssignee] = useState("");
   const [editCost, setEditCost] = useState("");
+  const can = user ? PERMISSIONS[user.role] : FULL_ACCESS;
   const [modal, setModal] = useState<
     "close" | "restart" | "compare" | "pilot" | null
   >(null);
+  const [reportsSaved, setReportsSaved] = useState(false);
   const [snapshots, setSnapshots] = useState<[unknown | null, unknown | null]>([
     null,
     null,
@@ -459,6 +469,10 @@ export function App() {
     kind: "hr" | "saas",
     append = false,
   ) {
+    if (!can.load) {
+      setError("Tu rol sólo permite recorrer la demo con datos de ejemplo.");
+      return;
+    }
     const epoch = sessionEpoch.current;
     const operation = ++uploadEpoch.current[kind];
     setError("");
@@ -542,6 +556,16 @@ export function App() {
   function saveReview(value: Candidate["review"]) {
     if (!requireSession()) return;
     if (!active) return;
+    const allowed =
+      value === "confirmed"
+        ? can.confirm
+        : value === "retained"
+          ? can.annotate || can.confirm
+          : can.annotate || can.confirm || can.editCost;
+    if (!allowed) {
+      setError("Tu rol no permite registrar esta decisión.");
+      return;
+    }
     if (value === "confirmed" && !assignee.trim()) {
       setError(
         "Indicá quién revisó el caso antes de incluirlo en el checklist.",
@@ -549,7 +573,7 @@ export function App() {
       return;
     }
     try {
-      const cost = parseMonthlyCost(editCost);
+      const cost = can.editCost ? parseMonthlyCost(editCost) : active.cost;
       const next = candidates.map((c) =>
         c.id === active.id
           ? {
@@ -558,6 +582,7 @@ export function App() {
               note: note.trim(),
               assignee: assignee.trim(),
               cost,
+              costSource: cost === c.cost ? c.costSource : ("user" as const),
             }
           : c,
       );
@@ -582,6 +607,10 @@ export function App() {
   }
   function exportReport(type: "xlsx" | "pdf") {
     if (!requireSession()) return;
+    if (type === "xlsx" ? !can.exportXlsx : !can.exportPdf) {
+      setError("Tu rol no permite descargar este reporte.");
+      return;
+    }
     try {
       const meta = {
         organization: organization || "Organización sin identificar",
@@ -675,6 +704,10 @@ export function App() {
   }
   function registerPilot() {
     if (!requireSession()) return;
+    if (!can.pilot) {
+      setError("Tu rol no permite registrar ejecuciones del piloto.");
+      return;
+    }
     try {
       const code = pilotCode.trim().toUpperCase();
       if (!/^[A-Z0-9_-]{2,24}$/.test(code))
@@ -752,20 +785,41 @@ export function App() {
             )}
           </span>
           <div className="local-mode">
-            <span className="avatar">IT</span>
+            <span className="avatar">
+              {user
+                ? user.name
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                : "IT"}
+            </span>
             <div>
-              <strong>Auditoría local</strong>
+              <strong>
+                {user ? user.name : "Auditoría local"}
+                {user && (
+                  <span className="role-badge">{ROLE_LABELS[user.role]}</span>
+                )}
+              </strong>
               <small>
                 {isDemo
                   ? "Datos ficticios · Demostración"
-                  : "Sin cuenta · Datos en este navegador"}
+                  : user
+                    ? `${user.email} · Datos en este navegador`
+                    : "Sin cuenta · Datos en este navegador"}
               </small>
             </div>
           </div>
+          {onSignOut && (
+            <Button variant="ghost" onClick={onSignOut}>
+              Cerrar sesión
+            </Button>
+          )}
           {(page === "results" ||
             page === "checklist" ||
             (page === "load" && hasLoadData)) && (
-            <Button variant="ghost" onClick={() => setModal("close")}>
+            <Button variant="ghost" onClick={() => { setReportsSaved(false); setModal("close"); }}>
               {page === "load" ? "Descartar carga" : "Cerrar auditoría"}
             </Button>
           )}
@@ -857,13 +911,14 @@ export function App() {
               </div>
               <button
                 className={`dropzone ${hrResult?.valid ? "valid" : ""}`}
+                title={can.load ? undefined : "Tu rol no permite cargar archivos"}
                 onClick={() => hrInput.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
                   void upload(e.dataTransfer.files, "hr");
                 }}
-                disabled={busy}
+                disabled={busy || !can.load}
               >
                 <IconFileTypeCsv size={40} />
                 <strong>
@@ -930,13 +985,14 @@ export function App() {
               </div>
               <button
                 className={`dropzone ${saasResult?.valid ? "valid" : ""}`}
+                title={can.load ? undefined : "Tu rol no permite cargar archivos"}
                 onClick={() => saasInput.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
                   void upload(e.dataTransfer.files, "saas");
                 }}
-                disabled={busy}
+                disabled={busy || !can.load}
               >
                 <IconChartBar size={40} />
                 <strong>
@@ -1138,6 +1194,30 @@ export function App() {
                 {auditStamp(createdAt)} · Proveedores:{" "}
                 {providerSummary(licenses) || "sin informar"}
               </p>
+              <div className="count-rules" aria-label="Resumen del cruce">
+                <span>
+                  <strong>{stats.totalLicenses}</strong> cuentas válidas de la
+                  fuente
+                </span>
+                <span>
+                  <strong>{stats.matchedCount}</strong> coinciden con la nómina
+                </span>
+                <span>
+                  <strong>{stats.candidateCount}</strong> candidatas a revisión
+                </span>
+                <small>
+                  Cuenta = proveedor + email normalizado; los duplicados exactos
+                  se cuentan una vez. Candidatas = cuentas válidas − coincidencias.
+                </small>
+              </div>
+              <p className="muted savings-formula">
+                Ahorro potencial mensual (USD) = suma de{" "}
+                {counted(stats.knownCostCount, "costo conocido", "costos conocidos")}{" "}
+                = {money(stats.potentialSavings)}.{" "}
+                {stats.unknownCostCount > 0
+                  ? `${counted(stats.unknownCostCount, "cuenta tiene", "cuentas tienen")} costo sin informar y no suman: no se reemplazan por cero ni por un promedio.`
+                  : "Todas las candidatas tienen costo informado."}
+              </p>
               <div className="filters">
                 <label className="search">
                   <IconSearch size={17} />
@@ -1213,6 +1293,11 @@ export function App() {
                             <span className="muted">Sin informar</span>
                           ) : (
                             money(c.cost)
+                          )}
+                          {c.costSource === "user" && (
+                            <small className="block cost-origin">
+                              Informado por el usuario
+                            </small>
                           )}
                         </td>
                         <td>
@@ -1333,11 +1418,14 @@ export function App() {
             </aside>
           </div>
           <div className="bottom-actions">
-            <Button onClick={() => setPage("checklist")}>
+            <Button
+              onClick={() => setPage("checklist")}
+              disabled={!candidates.length}
+            >
               <IconClipboardCheck size={19} /> Ver checklist de bajas{" "}
               <span className="button-count">{selected.length}</span>
             </Button>
-            <Button variant="secondary" onClick={() => setModal("restart")}>
+            <Button variant="secondary" onClick={() => { setReportsSaved(false); setModal("restart"); }}>
               <IconRefresh size={19} /> Nueva auditoría
             </Button>
             <Button variant="ghost" onClick={() => setModal("compare")}>
@@ -1402,6 +1490,12 @@ export function App() {
                   "cuentas sin costo informado",
                 )}
               </p>
+              <p className="muted">
+                Subtotal de la selección: {selected.length} de{" "}
+                {counted(candidates.length, "candidata", "candidatas")}. El
+                potencial de todas las candidatas es{" "}
+                {money(stats.potentialSavings)} / mes.
+              </p>
             </div>
             <span className="badge amber">Bajas pendientes de ejecutar</span>
           </div>
@@ -1412,6 +1506,7 @@ export function App() {
                   <th>COLABORADOR</th>
                   <th>PLATAFORMA / PLAN</th>
                   <th>COSTO MENSUAL</th>
+                  <th>ESTADO</th>
                   <th>RESPONSABLE</th>
                   <th>NOTA DE REVISIÓN</th>
                   <th>ACCIÓN</th>
@@ -1429,11 +1524,17 @@ export function App() {
                       <small className="block">{c.plan}</small>
                     </td>
                     <td>{c.cost === null ? "Sin informar" : money(c.cost)}</td>
+                    <td>
+                      <span className="badge amber">
+                        Pendiente de revisión de baja
+                      </span>
+                    </td>
                     <td>{c.assignee}</td>
                     <td>{c.note || "Sin nota"}</td>
                     <td>
                       <button
                         className="row-button"
+                        disabled={!can.confirm}
                         onClick={() =>
                           setCandidates((previous) =>
                             previous.map((p) =>
@@ -1471,7 +1572,7 @@ export function App() {
                 con el equipo.
               </p>
               <Button
-                disabled={!selected.length}
+                disabled={!selected.length || !can.exportXlsx}
                 onClick={() => exportReport("xlsx")}
               >
                 <IconDownload size={17} /> Descargar Excel
@@ -1486,7 +1587,7 @@ export function App() {
               </p>
               <Button
                 variant="secondary"
-                disabled={!selected.length}
+                disabled={!selected.length || !can.exportPdf}
                 onClick={() => exportReport("pdf")}
               >
                 <IconDownload size={17} /> Descargar PDF
@@ -1499,7 +1600,7 @@ export function App() {
                 Eliminá los archivos y las decisiones de esta sesión. Las
                 descargas quedan en tu equipo.
               </p>
-              <Button variant="ghost" onClick={() => setModal("close")}>
+              <Button variant="ghost" onClick={() => { setReportsSaved(false); setModal("close"); }}>
                 <IconTrash size={17} /> Cerrar auditoría
               </Button>
             </section>
@@ -1590,6 +1691,7 @@ export function App() {
                 <input
                   aria-label="Costo del caso"
                   inputMode="decimal"
+                  disabled={!can.editCost}
                   value={editCost}
                   onChange={(e) => setEditCost(e.target.value)}
                   placeholder="Sin informar"
@@ -1650,16 +1752,35 @@ export function App() {
             </p>
           )}
           <div className="review-actions">
-            <Button onClick={() => saveReview("confirmed")}>
-              <IconCheck size={19} /> Confirmar y agregar al checklist
-            </Button>
-            <Button variant="secondary" onClick={() => saveReview("retained")}>
-              Mantener cuenta / excepción
-            </Button>
-            <Button variant="ghost" onClick={() => saveReview("pending")}>
-              Guardar para revisar con RRHH
-            </Button>
+            {can.confirm && (
+              <Button onClick={() => saveReview("confirmed")}>
+                <IconCheck size={19} /> Confirmar y agregar al checklist
+              </Button>
+            )}
+            {(can.annotate || can.confirm) && (
+              <Button variant="secondary" onClick={() => saveReview("retained")}>
+                Mantener cuenta / excepción
+              </Button>
+            )}
+            {(can.annotate || can.confirm || can.editCost) && (
+              <Button variant="ghost" onClick={() => saveReview("pending")}>
+                {can.annotate || can.confirm
+                  ? "Guardar para revisar con RRHH"
+                  : "Guardar costo"}
+              </Button>
+            )}
           </div>
+          {user && (
+            <p className="permission-note">
+              Rol {ROLE_LABELS[user.role]}:{" "}
+              {[
+                can.confirm ? "confirma casos" : "no confirma casos",
+                can.editCost ? "corrige costos" : "no corrige costos",
+                can.annotate || can.confirm ? "anota excepciones" : "no anota",
+              ].join(" · ")}
+              .
+            </p>
+          )}
           <p className="modal-footnote">
             Confirmar agrega una tarea de baja al checklist. No revoca accesos
             ni acredita ahorro realizado.
@@ -1688,9 +1809,21 @@ export function App() {
             las 00:00, o al volver a abrir la app si estaba cerrada o
             suspendida.
           </p>
+          {page !== "load" && (
+            <label className="confirm-check">
+              <input
+                type="checkbox"
+                checked={reportsSaved}
+                onChange={(e) => setReportsSaved(e.target.checked)}
+              />
+              Ya descargué los reportes que necesito (o no necesito
+              conservarlos).
+            </label>
+          )}
           <div className="review-actions">
             <Button
               variant="danger"
+              disabled={page !== "load" && !reportsSaved}
               onClick={() =>
                 clearAudit(
                   page === "load"
@@ -1851,7 +1984,7 @@ export function App() {
               maxLength={24}
             />
           </label>
-          <Button disabled={pilotSaved || isDemo} onClick={registerPilot}>
+          <Button disabled={pilotSaved || isDemo || !can.pilot} onClick={registerPilot}>
             {pilotSaved
               ? "Ejecución registrada"
               : isDemo

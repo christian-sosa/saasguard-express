@@ -38,7 +38,7 @@ export interface License {
   cost: number | null
   status?: string
   originalEmail?: string
-  costSource?: 'csv' | 'default' | 'unknown'
+  costSource?: 'csv' | 'default' | 'unknown' | 'user'
 }
 
 export interface Candidate extends License {
