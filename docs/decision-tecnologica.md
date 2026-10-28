@@ -63,3 +63,7 @@ El MVP cubre carga dual de CSV, validación, conciliación por email normalizado
 Quedan fuera OAuth y APIs de proveedores, bajas automáticas, IA para decidir identidades y cobro de suscripciones. Además del recorrido HU01–HU15, la app ya incluye como extras técnicos la carga multifuente con validación conjunta (HU16), los snapshots JSON completos para comparar auditorías del mismo proveedor (HU17) y el registro agregado local del piloto (HU18). En el backlog se planificaron como evolución posterior; su presencia técnica no demuestra haber ejecutado un piloto real, validado recurrencia ni medido PMF. El registro local guarda código, fecha y conteos en un solo navegador, sin autenticar usuarios ni compartir datos entre equipos.
 
 El prototipo local no incluye cuentas de usuarios, persistencia cloud, SLA ni una evaluación de seguridad para producción. El objetivo de menos de 60 segundos y el recorrido funcional deben medirse con datos ficticios y evidencia. Antes de usarlo con nóminas reales habría que acordar despliegue, acceso, tratamiento del dato y operación con el equipo.
+
+## Actualización 28/10/2026: login con Google
+
+El equipo decidió sumar en el Sprint 2 un inicio de sesión con Google (tarjeta «Decisión · Login con Google»). Reemplaza el recorte «No hay autenticación» sólo en esto: quien opera la app se identifica con su cuenta de Google. Sigue sin haber backend, base compartida ni permisos por rol, y la integración por API con Google Workspace sigue fuera del alcance. Detalle y límites en [despliegue](despliegue.md#login-con-google--28102026).

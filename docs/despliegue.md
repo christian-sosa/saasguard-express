@@ -40,6 +40,20 @@ Antes de publicar esta actualización, comprobar el límite exacto de 02:59:59.9
 
 La política CSP permite scripts, estilos, fuentes e imágenes locales y bloquea conexiones de la app a APIs externas (`connect-src 'none'`). También restringe la inclusión en iframes, formularios y plugins. No se incorporan analytics ni envío de nóminas. Cambiar a una API o Supabase requiere revisar expresamente esa política.
 
+## Login con Google — 28/10/2026
+
+Decisión del 28/10/2026 (tarjeta «Decisión · Login con Google» del Sprint 2): la app suma un inicio de sesión con Google Identity Services. Es opcional por configuración: sin `VITE_GOOGLE_CLIENT_ID` la app funciona como antes, sin login.
+
+Para activarlo:
+
+1. En Google Cloud Console, crear un cliente OAuth de tipo «Aplicación web» (no tiene costo) y agregar como orígenes de JavaScript autorizados `http://localhost:5173` y `https://saasguard-express.vercel.app`.
+2. Cargar `VITE_GOOGLE_CLIENT_ID` en las variables de entorno de Vercel (y en `.env.local` para desarrollo). Opcional: `VITE_GOOGLE_ALLOWED_DOMAIN` para admitir solo cuentas de un dominio de Google Workspace.
+3. Volver a publicar: la variable se incorpora en el build.
+
+`vercel.json` permite en la CSP únicamente los recursos de `https://accounts.google.com/gsi/` y usa `Referrer-Policy: strict-origin-when-cross-origin`, que el botón de Google necesita.
+
+Límites: no hay backend, así que el token de Google se valida en el navegador (emisor, audiencia, vencimiento, email verificado y dominio) pero no se verifica su firma. El login identifica a quien opera la app; no es una autorización de servidor ni protege datos, que siguen en el navegador. No se piden permisos sobre Google Workspace ni se leen usuarios por API. El perfil de quien inicia sesión (nombre y email) vive en `sessionStorage` hasta que se cierra la pestaña, se cierra la sesión o vence el token.
+
 ## Operación y costo
 
 El despliegue usa Hobby para la demostración académica personal y no comercial, dentro de sus límites. No se contratan servicios pagos ni dominio. La dirección pública permite que otras personas ejecuten su propia sesión local; no permite ver la sesión de otro navegador ni otorga roles autenticados.

@@ -47,6 +47,7 @@ import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
 import { nextArgentinaMidnight } from "./retention";
 import { auditStamp, providerSummary, reviewText } from "./labels";
+import type { GoogleUser } from "./auth";
 
 type Upload = { name: string; table: CsvTable; emailHeader: string };
 type Page = "load" | "results" | "checklist" | "closed";
@@ -253,7 +254,13 @@ function CsvPreview({ upload }: { upload: Upload }) {
   );
 }
 
-export function App() {
+export function App({
+  user = null,
+  onSignOut = null,
+}: {
+  user?: GoogleUser | null;
+  onSignOut?: (() => void) | null;
+} = {}) {
   const [page, setPage] = useState<Page>("load");
   const [hr, setHr] = useState<Upload | null>(null);
   const [currentRoster, setCurrentRoster] = useState(false);
@@ -754,16 +761,32 @@ export function App() {
             )}
           </span>
           <div className="local-mode">
-            <span className="avatar">IT</span>
+            <span className="avatar">
+              {user
+                ? user.name
+                    .split(/\s+/)
+                    .slice(0, 2)
+                    .map((n) => n[0])
+                    .join("")
+                    .toUpperCase()
+                : "IT"}
+            </span>
             <div>
-              <strong>Auditoría local</strong>
+              <strong>{user ? user.name : "Auditoría local"}</strong>
               <small>
                 {isDemo
                   ? "Datos ficticios · Demostración"
-                  : "Sin cuenta · Datos en este navegador"}
+                  : user
+                    ? `${user.email} · Datos en este navegador`
+                    : "Sin cuenta · Datos en este navegador"}
               </small>
             </div>
           </div>
+          {onSignOut && (
+            <Button variant="ghost" onClick={onSignOut}>
+              Cerrar sesión
+            </Button>
+          )}
           {(page === "results" ||
             page === "checklist" ||
             (page === "load" && hasLoadData)) && (
