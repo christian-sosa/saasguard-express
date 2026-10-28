@@ -280,6 +280,7 @@ export function App() {
   const [modal, setModal] = useState<
     "close" | "restart" | "compare" | "pilot" | null
   >(null);
+  const [reportsSaved, setReportsSaved] = useState(false);
   const [snapshots, setSnapshots] = useState<[unknown | null, unknown | null]>([
     null,
     null,
@@ -558,6 +559,7 @@ export function App() {
               note: note.trim(),
               assignee: assignee.trim(),
               cost,
+              costSource: cost === c.cost ? c.costSource : ("user" as const),
             }
           : c,
       );
@@ -765,7 +767,7 @@ export function App() {
           {(page === "results" ||
             page === "checklist" ||
             (page === "load" && hasLoadData)) && (
-            <Button variant="ghost" onClick={() => setModal("close")}>
+            <Button variant="ghost" onClick={() => { setReportsSaved(false); setModal("close"); }}>
               {page === "load" ? "Descartar carga" : "Cerrar auditoría"}
             </Button>
           )}
@@ -1138,6 +1140,30 @@ export function App() {
                 {auditStamp(createdAt)} · Proveedores:{" "}
                 {providerSummary(licenses) || "sin informar"}
               </p>
+              <div className="count-rules" aria-label="Resumen del cruce">
+                <span>
+                  <strong>{stats.totalLicenses}</strong> cuentas válidas de la
+                  fuente
+                </span>
+                <span>
+                  <strong>{stats.matchedCount}</strong> coinciden con la nómina
+                </span>
+                <span>
+                  <strong>{stats.candidateCount}</strong> candidatas a revisión
+                </span>
+                <small>
+                  Cuenta = proveedor + email normalizado; los duplicados exactos
+                  se cuentan una vez. Candidatas = cuentas válidas − coincidencias.
+                </small>
+              </div>
+              <p className="muted savings-formula">
+                Ahorro potencial mensual (USD) = suma de{" "}
+                {counted(stats.knownCostCount, "costo conocido", "costos conocidos")}{" "}
+                = {money(stats.potentialSavings)}.{" "}
+                {stats.unknownCostCount > 0
+                  ? `${counted(stats.unknownCostCount, "cuenta tiene", "cuentas tienen")} costo sin informar y no suman: no se reemplazan por cero ni por un promedio.`
+                  : "Todas las candidatas tienen costo informado."}
+              </p>
               <div className="filters">
                 <label className="search">
                   <IconSearch size={17} />
@@ -1213,6 +1239,11 @@ export function App() {
                             <span className="muted">Sin informar</span>
                           ) : (
                             money(c.cost)
+                          )}
+                          {c.costSource === "user" && (
+                            <small className="block cost-origin">
+                              Informado por el usuario
+                            </small>
                           )}
                         </td>
                         <td>
@@ -1333,11 +1364,14 @@ export function App() {
             </aside>
           </div>
           <div className="bottom-actions">
-            <Button onClick={() => setPage("checklist")}>
+            <Button
+              onClick={() => setPage("checklist")}
+              disabled={!candidates.length}
+            >
               <IconClipboardCheck size={19} /> Ver checklist de bajas{" "}
               <span className="button-count">{selected.length}</span>
             </Button>
-            <Button variant="secondary" onClick={() => setModal("restart")}>
+            <Button variant="secondary" onClick={() => { setReportsSaved(false); setModal("restart"); }}>
               <IconRefresh size={19} /> Nueva auditoría
             </Button>
             <Button variant="ghost" onClick={() => setModal("compare")}>
@@ -1402,6 +1436,12 @@ export function App() {
                   "cuentas sin costo informado",
                 )}
               </p>
+              <p className="muted">
+                Subtotal de la selección: {selected.length} de{" "}
+                {counted(candidates.length, "candidata", "candidatas")}. El
+                potencial de todas las candidatas es{" "}
+                {money(stats.potentialSavings)} / mes.
+              </p>
             </div>
             <span className="badge amber">Bajas pendientes de ejecutar</span>
           </div>
@@ -1412,6 +1452,7 @@ export function App() {
                   <th>COLABORADOR</th>
                   <th>PLATAFORMA / PLAN</th>
                   <th>COSTO MENSUAL</th>
+                  <th>ESTADO</th>
                   <th>RESPONSABLE</th>
                   <th>NOTA DE REVISIÓN</th>
                   <th>ACCIÓN</th>
@@ -1429,6 +1470,11 @@ export function App() {
                       <small className="block">{c.plan}</small>
                     </td>
                     <td>{c.cost === null ? "Sin informar" : money(c.cost)}</td>
+                    <td>
+                      <span className="badge amber">
+                        Pendiente de revisión de baja
+                      </span>
+                    </td>
                     <td>{c.assignee}</td>
                     <td>{c.note || "Sin nota"}</td>
                     <td>
@@ -1499,7 +1545,7 @@ export function App() {
                 Eliminá los archivos y las decisiones de esta sesión. Las
                 descargas quedan en tu equipo.
               </p>
-              <Button variant="ghost" onClick={() => setModal("close")}>
+              <Button variant="ghost" onClick={() => { setReportsSaved(false); setModal("close"); }}>
                 <IconTrash size={17} /> Cerrar auditoría
               </Button>
             </section>
@@ -1688,9 +1734,21 @@ export function App() {
             las 00:00, o al volver a abrir la app si estaba cerrada o
             suspendida.
           </p>
+          {page !== "load" && (
+            <label className="confirm-check">
+              <input
+                type="checkbox"
+                checked={reportsSaved}
+                onChange={(e) => setReportsSaved(e.target.checked)}
+              />
+              Ya descargué los reportes que necesito (o no necesito
+              conservarlos).
+            </label>
+          )}
           <div className="review-actions">
             <Button
               variant="danger"
+              disabled={page !== "load" && !reportsSaved}
               onClick={() =>
                 clearAudit(
                   page === "load"
