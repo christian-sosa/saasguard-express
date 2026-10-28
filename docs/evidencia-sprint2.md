@@ -40,3 +40,20 @@ Script reproducible: [`evidencia/sprint2/simulacion.cjs`](evidencia/sprint2/simu
 - La búsqueda de alias de la ficha compara sólo la primera palabra del nombre: con nombres frecuentes lista a casi toda la nómina. Entra como tarjeta «Decisión» para el Sprint 3.
 - La métrica «dos de tres tareas sin ayuda» necesita personas reales; la simulación no la reemplaza.
 - Encabezados reales de Slack y Google Workspace: siguen sin un archivo real para confirmar (SPIKE-01).
+
+## Login y roles
+
+Pedido del 28/10/2026: login con usuario y contraseña o con Google, y usuarios de prueba con distintos accesos. Verificado en Chrome con Playwright y un client ID de prueba:
+
+| Caso | Resultado |
+|---|---|
+| Contraseña incorrecta | «Usuario o contraseña incorrectos.»; el mismo mensaje si el usuario no existe |
+| Cinco intentos fallidos | «Demasiados intentos» durante 30 segundos |
+| Administración | Carga, confirma, anota, corrige costos y exporta |
+| IT | Carga, confirma y anota; el costo no se puede editar |
+| People Operations | Carga y anota; no ve «Confirmar» ni corrige costos |
+| Finanzas | Carga, confirma, corrige costos y exporta Excel y PDF |
+| Sólo lectura | Sólo la demo; no carga archivos, no confirma ni exporta |
+| Cerrar sesión o sesión vencida | Vuelve a la pantalla de ingreso |
+
+El ingreso real con Google necesita el cliente OAuth creado para la URL de la app. Capturas: `S2-11` (ingreso), `S2-13` (contraseña incorrecta) y `S2-14` (ficha según el rol). La simulación de los tres perfiles ahora entra con `ignacio.it`, `florencia.rrhh` y `gonzalo.finanzas` y sigue en 9 de 9.

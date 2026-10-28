@@ -1,14 +1,34 @@
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
-import { IconShieldCheck, IconAlertTriangle } from "@tabler/icons-react";
 import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from "react";
+import {
+  IconAlertTriangle,
+  IconEye,
+  IconEyeOff,
+  IconHelpCircle,
+  IconLock,
+  IconLogin2,
+  IconMail,
+  IconUser,
+} from "@tabler/icons-react";
+import {
+  AttemptLimiter,
   GSI_SCRIPT_URL,
-  authConfig,
   clearStoredUser,
+  googleConfig,
   parseGoogleCredential,
+  readRememberedIdentifier,
   readStoredUser,
+  rememberIdentifier,
+  signInWithPassword,
   storeUser,
-  type AuthConfig,
-  type GoogleUser,
+  type GoogleConfig,
+  type SessionUser,
 } from "./auth";
 
 interface GoogleIdApi {
@@ -17,7 +37,6 @@ interface GoogleIdApi {
     callback: (response: { credential?: string }) => void;
     auto_select?: boolean;
     ux_mode?: "popup" | "redirect";
-    hd?: string;
   }): void;
   renderButton(parent: HTMLElement, options: Record<string, unknown>): void;
   disableAutoSelect(): void;
@@ -46,15 +65,16 @@ function loadGoogleScript(): Promise<void> {
   return scriptPromise;
 }
 
-function LoginScreen({
+function GoogleButton({
   config,
   onUser,
+  onError,
 }: {
-  config: AuthConfig;
-  onUser: (user: GoogleUser) => void;
+  config: GoogleConfig;
+  onUser: (user: SessionUser) => void;
+  onError: (message: string) => void;
 }) {
   const button = useRef<HTMLDivElement>(null);
-  const [error, setError] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -66,71 +86,163 @@ function LoginScreen({
           client_id: config.clientId,
           auto_select: false,
           ux_mode: "popup",
-          hd: config.allowedDomain,
           callback: (response) => {
             try {
-              if (!response.credential) throw new Error("Google no devolvió una credencial.");
+              if (!response.credential)
+                throw new Error("Google no devolvió una credencial.");
               onUser(parseGoogleCredential(response.credential, config));
             } catch (e) {
-              setError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
+              onError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
             }
           },
         });
         id.renderButton(button.current, {
-          theme: "filled_blue",
+          theme: "filled_black",
           size: "large",
-          shape: "pill",
-          text: "signin_with",
+          shape: "rectangular",
+          text: "continue_with",
           locale: "es-419",
-          width: 280,
+          width: Math.min(400, button.current.clientWidth || 340),
         });
       })
-      .catch((e: Error) => active && setError(e.message));
+      .catch((e: Error) => active && onError(e.message));
     return () => {
       active = false;
     };
-  }, [config, onUser]);
+  }, [config, onUser, onError]);
+
+  return <div ref={button} className="google-button" />;
+}
+
+const limiter = new AttemptLimiter();
+
+function LoginScreen({
+  google,
+  onUser,
+}: {
+  google: GoogleConfig | null;
+  onUser: (user: SessionUser) => void;
+}) {
+  const [identifier, setIdentifier] = useState(() => readRememberedIdentifier());
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [remember, setRemember] = useState(() => Boolean(readRememberedIdentifier()));
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [help, setHelp] = useState(false);
+
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    const locked = limiter.remainingLockMs();
+    if (locked) {
+      setError(`Demasiados intentos. Probá de nuevo en ${Math.ceil(locked / 1000)} segundos.`);
+      return;
+    }
+    setBusy(true);
+    try {
+      const user = await signInWithPassword(identifier, password);
+      limiter.succeed();
+      rememberIdentifier(remember ? identifier : null);
+      onUser(user);
+    } catch (e) {
+      limiter.fail();
+      setPassword("");
+      setError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   return (
     <main className="login-shell">
       <section className="login-card">
-        <img src="/saasguard-mark.png" alt="" width={56} height={56} />
-        <h1>SaaSGuard Express</h1>
-        <p>
-          Ingresá con tu cuenta de Google para auditar licencias SaaS contra la
-          nómina vigente.
-        </p>
-        <div ref={button} className="google-button" />
-        {error && (
-          <p role="alert" className="field-error">
-            <IconAlertTriangle size={16} /> {error}
+        <IconUser size={64} className="login-avatar" aria-hidden />
+        <h1>Bienvenido a SaaSGuard Express</h1>
+        <p className="login-subtitle">Ingresá con tus credenciales para acceder</p>
+        <form onSubmit={(e) => void submit(e)} noValidate>
+          <label className="login-field">
+            <span className="login-icon">
+              <IconMail size={20} />
+            </span>
+            <input
+              aria-label="Email o usuario"
+              autoComplete="username"
+              placeholder="Ingresá tu email o usuario"
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+            />
+          </label>
+          <label className="login-field">
+            <span className="login-icon">
+              <IconLock size={20} />
+            </span>
+            <input
+              aria-label="Contraseña"
+              autoComplete="current-password"
+              type={showPassword ? "text" : "password"}
+              placeholder="Ingresá tu contraseña"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+            />
+            <button
+              type="button"
+              className="login-eye"
+              aria-label={showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+              onClick={() => setShowPassword((value) => !value)}
+            >
+              {showPassword ? <IconEyeOff size={20} /> : <IconEye size={20} />}
+            </button>
+          </label>
+          <label className="login-remember">
+            <input
+              type="checkbox"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            />
+            Recordar mis datos
+          </label>
+          {error && (
+            <p role="alert" className="login-error">
+              <IconAlertTriangle size={16} /> {error}
+            </p>
+          )}
+          <button type="submit" className="login-submit" disabled={busy}>
+            <IconLogin2 size={22} /> {busy ? "Verificando…" : "Iniciar sesión"}
+          </button>
+        </form>
+        <button type="button" className="login-link" onClick={() => setHelp((v) => !v)}>
+          <IconHelpCircle size={16} /> ¿Olvidaste tu contraseña?
+        </button>
+        {help && (
+          <p className="login-help">
+            Pedile a quien administra SaaSGuard que te asigne una nueva. Las
+            cuentas de prueba están en docs/usuarios-de-prueba.md del repositorio.
           </p>
         )}
+        {google && (
+          <>
+            <span className="login-or">ó</span>
+            <GoogleButton config={google} onUser={onUser} onError={setError} />
+          </>
+        )}
         <p className="login-note">
-          <IconShieldCheck size={16} /> Google sólo identifica a quien opera la
-          app: no damos acceso a tus plataformas ni leemos tu Workspace. La
-          nómina y las exportaciones se siguen procesando en este navegador.
-          {config.allowedDomain
-            ? ` Sólo se admiten cuentas de ${config.allowedDomain}.`
-            : ""}
+          Recordar mis datos guarda sólo tu usuario en este navegador. La nómina
+          y las exportaciones se procesan acá y no se envían a ningún servidor.
         </p>
       </section>
     </main>
   );
 }
 
-/** Without VITE_GOOGLE_CLIENT_ID the app keeps working without sign-in, as before. */
 export function AuthGate({
   children,
 }: {
-  children: (user: GoogleUser | null, signOut: (() => void) | null) => ReactNode;
+  children: (user: SessionUser, signOut: () => void) => ReactNode;
 }) {
-  const [config] = useState(() => authConfig());
-  const [user, setUser] = useState<GoogleUser | null>(() =>
-    config ? readStoredUser(config) : null,
-  );
+  const [google] = useState(() => googleConfig());
+  const [user, setUser] = useState<SessionUser | null>(() => readStoredUser(google));
 
-  const signIn = useCallback((next: GoogleUser) => {
+  const signIn = useCallback((next: SessionUser) => {
     storeUser(next);
     setUser(next);
   }, []);
@@ -147,7 +259,6 @@ export function AuthGate({
     return () => window.clearTimeout(timer);
   }, [user, signOut]);
 
-  if (!config) return <>{children(null, null)}</>;
-  if (!user) return <LoginScreen config={config} onUser={signIn} />;
+  if (!user) return <LoginScreen google={google} onUser={signIn} />;
   return <>{children(user, signOut)}</>;
 }

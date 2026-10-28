@@ -66,4 +66,4 @@ El prototipo local no incluye cuentas de usuarios, persistencia cloud, SLA ni un
 
 ## Actualización 28/10/2026: login con Google
 
-El equipo decidió sumar en el Sprint 2 un inicio de sesión con Google (tarjeta «Decisión · Login con Google»). Reemplaza el recorte «No hay autenticación» sólo en esto: quien opera la app se identifica con su cuenta de Google. Sigue sin haber backend, base compartida ni permisos por rol, y la integración por API con Google Workspace sigue fuera del alcance. Detalle y límites en [despliegue](despliegue.md#login-con-google--28102026).
+El equipo decidió sumar en el Sprint 2 un inicio de sesión con usuario y contraseña o con Google, con cinco roles de prueba (tarjeta «Decisión · Login con Google»). Reemplaza el recorte «No hay autenticación»: quien opera la app se identifica y su rol define qué puede hacer en la interfaz. Sigue sin haber backend ni base compartida, así que no es una autorización de servidor, y la integración por API con Google Workspace sigue fuera del alcance. Detalle y límites en [despliegue](despliegue.md#login-con-google--28102026).

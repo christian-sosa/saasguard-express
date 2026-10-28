@@ -47,7 +47,8 @@ import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
 import { nextArgentinaMidnight } from "./retention";
 import { auditStamp, providerSummary, reviewText } from "./labels";
-import type { GoogleUser } from "./auth";
+import type { SessionUser } from "./auth";
+import { FULL_ACCESS, PERMISSIONS, ROLE_LABELS } from "./roles";
 
 type Upload = { name: string; table: CsvTable; emailHeader: string };
 type Page = "load" | "results" | "checklist" | "closed";
@@ -258,7 +259,7 @@ export function App({
   user = null,
   onSignOut = null,
 }: {
-  user?: GoogleUser | null;
+  user?: SessionUser | null;
   onSignOut?: (() => void) | null;
 } = {}) {
   const [page, setPage] = useState<Page>("load");
@@ -284,6 +285,7 @@ export function App({
   const [note, setNote] = useState("");
   const [assignee, setAssignee] = useState("");
   const [editCost, setEditCost] = useState("");
+  const can = user ? PERMISSIONS[user.role] : FULL_ACCESS;
   const [modal, setModal] = useState<
     "close" | "restart" | "compare" | "pilot" | null
   >(null);
@@ -467,6 +469,10 @@ export function App({
     kind: "hr" | "saas",
     append = false,
   ) {
+    if (!can.load) {
+      setError("Tu rol sólo permite recorrer la demo con datos de ejemplo.");
+      return;
+    }
     const epoch = sessionEpoch.current;
     const operation = ++uploadEpoch.current[kind];
     setError("");
@@ -550,6 +556,16 @@ export function App({
   function saveReview(value: Candidate["review"]) {
     if (!requireSession()) return;
     if (!active) return;
+    const allowed =
+      value === "confirmed"
+        ? can.confirm
+        : value === "retained"
+          ? can.annotate || can.confirm
+          : can.annotate || can.confirm || can.editCost;
+    if (!allowed) {
+      setError("Tu rol no permite registrar esta decisión.");
+      return;
+    }
     if (value === "confirmed" && !assignee.trim()) {
       setError(
         "Indicá quién revisó el caso antes de incluirlo en el checklist.",
@@ -557,7 +573,7 @@ export function App({
       return;
     }
     try {
-      const cost = parseMonthlyCost(editCost);
+      const cost = can.editCost ? parseMonthlyCost(editCost) : active.cost;
       const next = candidates.map((c) =>
         c.id === active.id
           ? {
@@ -591,6 +607,10 @@ export function App({
   }
   function exportReport(type: "xlsx" | "pdf") {
     if (!requireSession()) return;
+    if (type === "xlsx" ? !can.exportXlsx : !can.exportPdf) {
+      setError("Tu rol no permite descargar este reporte.");
+      return;
+    }
     try {
       const meta = {
         organization: organization || "Organización sin identificar",
@@ -684,6 +704,10 @@ export function App({
   }
   function registerPilot() {
     if (!requireSession()) return;
+    if (!can.pilot) {
+      setError("Tu rol no permite registrar ejecuciones del piloto.");
+      return;
+    }
     try {
       const code = pilotCode.trim().toUpperCase();
       if (!/^[A-Z0-9_-]{2,24}$/.test(code))
@@ -772,7 +796,12 @@ export function App({
                 : "IT"}
             </span>
             <div>
-              <strong>{user ? user.name : "Auditoría local"}</strong>
+              <strong>
+                {user ? user.name : "Auditoría local"}
+                {user && (
+                  <span className="role-badge">{ROLE_LABELS[user.role]}</span>
+                )}
+              </strong>
               <small>
                 {isDemo
                   ? "Datos ficticios · Demostración"
@@ -882,13 +911,14 @@ export function App({
               </div>
               <button
                 className={`dropzone ${hrResult?.valid ? "valid" : ""}`}
+                title={can.load ? undefined : "Tu rol no permite cargar archivos"}
                 onClick={() => hrInput.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
                   void upload(e.dataTransfer.files, "hr");
                 }}
-                disabled={busy}
+                disabled={busy || !can.load}
               >
                 <IconFileTypeCsv size={40} />
                 <strong>
@@ -955,13 +985,14 @@ export function App({
               </div>
               <button
                 className={`dropzone ${saasResult?.valid ? "valid" : ""}`}
+                title={can.load ? undefined : "Tu rol no permite cargar archivos"}
                 onClick={() => saasInput.current?.click()}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => {
                   e.preventDefault();
                   void upload(e.dataTransfer.files, "saas");
                 }}
-                disabled={busy}
+                disabled={busy || !can.load}
               >
                 <IconChartBar size={40} />
                 <strong>
@@ -1503,6 +1534,7 @@ export function App({
                     <td>
                       <button
                         className="row-button"
+                        disabled={!can.confirm}
                         onClick={() =>
                           setCandidates((previous) =>
                             previous.map((p) =>
@@ -1540,7 +1572,7 @@ export function App({
                 con el equipo.
               </p>
               <Button
-                disabled={!selected.length}
+                disabled={!selected.length || !can.exportXlsx}
                 onClick={() => exportReport("xlsx")}
               >
                 <IconDownload size={17} /> Descargar Excel
@@ -1555,7 +1587,7 @@ export function App({
               </p>
               <Button
                 variant="secondary"
-                disabled={!selected.length}
+                disabled={!selected.length || !can.exportPdf}
                 onClick={() => exportReport("pdf")}
               >
                 <IconDownload size={17} /> Descargar PDF
@@ -1659,6 +1691,7 @@ export function App({
                 <input
                   aria-label="Costo del caso"
                   inputMode="decimal"
+                  disabled={!can.editCost}
                   value={editCost}
                   onChange={(e) => setEditCost(e.target.value)}
                   placeholder="Sin informar"
@@ -1719,16 +1752,35 @@ export function App({
             </p>
           )}
           <div className="review-actions">
-            <Button onClick={() => saveReview("confirmed")}>
-              <IconCheck size={19} /> Confirmar y agregar al checklist
-            </Button>
-            <Button variant="secondary" onClick={() => saveReview("retained")}>
-              Mantener cuenta / excepción
-            </Button>
-            <Button variant="ghost" onClick={() => saveReview("pending")}>
-              Guardar para revisar con RRHH
-            </Button>
+            {can.confirm && (
+              <Button onClick={() => saveReview("confirmed")}>
+                <IconCheck size={19} /> Confirmar y agregar al checklist
+              </Button>
+            )}
+            {(can.annotate || can.confirm) && (
+              <Button variant="secondary" onClick={() => saveReview("retained")}>
+                Mantener cuenta / excepción
+              </Button>
+            )}
+            {(can.annotate || can.confirm || can.editCost) && (
+              <Button variant="ghost" onClick={() => saveReview("pending")}>
+                {can.annotate || can.confirm
+                  ? "Guardar para revisar con RRHH"
+                  : "Guardar costo"}
+              </Button>
+            )}
           </div>
+          {user && (
+            <p className="permission-note">
+              Rol {ROLE_LABELS[user.role]}:{" "}
+              {[
+                can.confirm ? "confirma casos" : "no confirma casos",
+                can.editCost ? "corrige costos" : "no corrige costos",
+                can.annotate || can.confirm ? "anota excepciones" : "no anota",
+              ].join(" · ")}
+              .
+            </p>
+          )}
           <p className="modal-footnote">
             Confirmar agrega una tarea de baja al checklist. No revoca accesos
             ni acredita ahorro realizado.
@@ -1932,7 +1984,7 @@ export function App({
               maxLength={24}
             />
           </label>
-          <Button disabled={pilotSaved || isDemo} onClick={registerPilot}>
+          <Button disabled={pilotSaved || isDemo || !can.pilot} onClick={registerPilot}>
             {pilotSaved
               ? "Ejecución registrada"
               : isDemo

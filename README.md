@@ -2,7 +2,7 @@
 
 MVP académico para cruzar una nómina vigente con exportaciones de licencias SaaS, revisar cuentas que no coinciden y preparar un checklist de bajas manuales. Está construido con React y TypeScript y procesa los archivos localmente en el navegador, tanto al ejecutar en el equipo como al servirlo desde Vercel.
 
-**App publicada:** [saasguard-express.vercel.app](https://saasguard-express.vercel.app/) · Vercel Hobby · Sin base compartida. Login opcional con Google (ver [despliegue](docs/despliegue.md)).
+**App publicada:** [saasguard-express.vercel.app](https://saasguard-express.vercel.app/) · Vercel Hobby · Sin base compartida. Login con usuario y contraseña o Google, con roles (ver [usuarios de prueba](docs/usuarios-de-prueba.md)).
 
 La referencia visual es la versión v2 del [diseño de SaaSGuard en Figma](https://www.figma.com/design/7ooEdCaHVh4rrrBjXlipuA/SaaSGuard?node-id=0-1&p=f). Las cifras de la app se calculan desde los archivos cargados: no reproducen como hechos las cifras ilustrativas del prototipo. El resultado identifica candidatos a revisión y ahorro potencial, sin afirmar egresos, actividad real, accesos revocados ni ahorro logrado.
 
@@ -25,7 +25,7 @@ npm ci
 npm run dev
 ```
 
-Abrir la dirección local que informa Vite, normalmente http://localhost:5173. La configuración para publicar el mismo frontend estático en Vercel Hobby está en [despliegue](docs/despliegue.md); no requiere Supabase. El login con Google se activa con `VITE_GOOGLE_CLIENT_ID` (ver `.env.example`); sin esa variable la app abre sin login.
+Abrir la dirección local que informa Vite, normalmente http://localhost:5173. La configuración para publicar el mismo frontend estático en Vercel Hobby está en [despliegue](docs/despliegue.md); no requiere Supabase. La app pide iniciar sesión con los [usuarios de prueba](docs/usuarios-de-prueba.md); el botón de Google se activa con `VITE_GOOGLE_CLIENT_ID` y `VITE_GOOGLE_ALLOWED_EMAILS` (ver `.env.example`).
 
 ```bash
 npm run check

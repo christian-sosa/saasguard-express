@@ -3,12 +3,17 @@ const { chromium } = require('playwright');
 const fs = require('fs');
 const path = require('path');
 
-const APP = 'http://localhost:5179/';
+const APP = process.env.APP_URL || 'http://localhost:5181/';
 const REPO = '/Users/marcelomansilla/Documents/Uade/saasguard-express';
 const SET = path.join(REPO, 'fixtures/pruebas/02_mediano_multiplataforma');
 const OUT = path.join(REPO, 'docs/evidencia/sprint2');
 const XLSX = require(path.join(REPO, 'node_modules/xlsx'));
 fs.mkdirSync(OUT, { recursive: true });
+
+// Test passwords come from the documented synthetic users (docs/usuarios-de-prueba.md).
+const CREDENTIALS = Object.fromEntries(
+  [...fs.readFileSync(path.join(REPO, 'docs/usuarios-de-prueba.md'), 'utf8').matchAll(/^\| `([^`]+)` \| `[^`]+` \| `([^`]+)` \|/gm)]
+    .map(([, user, password]) => [user, password]));
 
 const log = [];
 function record(profile, task, ok, ms, detail) {
@@ -22,8 +27,16 @@ async function step(profile, task, fn) {
 }
 async function shot(page, name, fullPage = true) { await page.screenshot({ path: path.join(OUT, `${name}.png`), fullPage }); }
 
-async function loadAndCross(page, organization) {
+async function signIn(page, username) {
   await page.goto(APP);
+  await page.getByLabel('Email o usuario').fill(username);
+  await page.getByLabel('Contraseña', { exact: true }).fill(CREDENTIALS[username]);
+  await page.getByRole('button', { name: 'Iniciar sesión' }).click();
+  await page.getByRole('heading', { name: /Conciliación Express/ }).waitFor();
+}
+
+async function loadAndCross(page, organization, username) {
+  await signIn(page, username);
   await page.getByPlaceholder('Nombre para el reporte (opcional)').fill(organization);
   await page.getByLabel('Cargar nómina CSV').setInputFiles(path.join(SET, 'nomina.csv'));
   await page.getByLabel('Cargar licencias CSV').setInputFiles([
@@ -59,7 +72,7 @@ async function confirmCase(page, email, provider, who, cost) {
     const P = 'IT (Ignacio)';
     await step(P, 'T1 Cargar nómina y dos exportaciones y cruzar', async () => {
       const t0 = Date.now();
-      await loadAndCross(page, 'Empresa ficticia del ensayo');
+      await loadAndCross(page, 'Empresa ficticia del ensayo', 'ignacio.it');
       await shot(page, 'S2-01_IT_resultado_y_reglas_de_conteo');
       const rules = await page.getByLabel('Resumen del cruce').innerText();
       if (!/90[\s\S]*60[\s\S]*30/.test(rules)) throw new Error('Conteos inesperados: ' + rules);
@@ -94,7 +107,7 @@ async function confirmCase(page, email, provider, who, cost) {
   {
     const page = await newPage();
     const P = 'People Ops (Florencia)';
-    await loadAndCross(page, 'Empresa ficticia del ensayo');
+    await loadAndCross(page, 'Empresa ficticia del ensayo', 'florencia.rrhh');
     await step(P, 'T1 Dejar un caso para revisar con RRHH con nota', async () => {
       await openCase(page, 'persona033', 'Jira');
       await page.getByText('Verificar posibles alias en la nómina').click();
@@ -140,7 +153,7 @@ async function confirmCase(page, email, provider, who, cost) {
   {
     const page = await newPage();
     const P = 'Finanzas (Gonzalo)';
-    await loadAndCross(page, 'Empresa ficticia del ensayo');
+    await loadAndCross(page, 'Empresa ficticia del ensayo', 'gonzalo.finanzas');
     await step(P, 'T1 Completar un costo sin informar', async () => {
       const before = await page.locator('.savings-formula').innerText();
       await confirmCase(page, 'persona032', 'Google Workspace', 'Gonzalo (Finanzas)', '15');
