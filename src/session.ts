@@ -60,10 +60,17 @@ export function savePilotRun(run: PilotRun): void {
     throw new Error("El registro necesita un código válido, fecha ISO UTC de hoy en Argentina no futura y conteos enteros con seleccionadas dentro del total de candidatas.");
   }
   // Existing entries are read through the same whitelist. A failed write is surfaced to the caller.
-  localStorage.setItem(
-    KEY,
-    JSON.stringify([...readPilotRuns(), aggregate].slice(-MAX_ENTRIES)),
-  );
+  try {
+    localStorage.setItem(
+      KEY,
+      JSON.stringify([...readPilotRuns(), aggregate].slice(-MAX_ENTRIES)),
+    );
+  } catch (error) {
+    if (error instanceof DOMException && error.name === "SecurityError") {
+      throw new Error("Este navegador no permite guardar datos del sitio, así que el registro del piloto no se guardó.");
+    }
+    throw error;
+  }
 }
 export function clearPilotRuns(): void {
   try {
