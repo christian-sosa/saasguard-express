@@ -66,5 +66,9 @@ export function savePilotRun(run: PilotRun): void {
   );
 }
 export function clearPilotRuns(): void {
-  localStorage.removeItem(KEY);
+  try {
+    localStorage.removeItem(KEY);
+  } catch {
+    // With blocked storage there is nothing to clear.
+  }
 }

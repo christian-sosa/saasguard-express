@@ -179,3 +179,20 @@ describe('local pilot aggregate privacy and validity', () => {
     expect(storage.length).toBe(1);
   });
 });
+
+describe('pilot records with blocked storage', () => {
+  it('reads and clears without throwing when localStorage throws on access', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('The operation is insecure.', 'SecurityError'); },
+    });
+    try {
+      expect(readPilotRuns()).toEqual([]);
+      expect(() => clearPilotRuns()).not.toThrow();
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+      else delete (globalThis as Record<string, unknown>).localStorage;
+    }
+  });
+});

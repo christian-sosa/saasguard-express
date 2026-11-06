@@ -136,6 +136,37 @@ export function parseGoogleCredential(credential: string, config: GoogleConfig, 
   }
 }
 
+/**
+ * Google can answer after the login screen is gone, for instance when the user signed in with a
+ * password while the popup was open. A late answer must not replace the signed-in user.
+ */
+export function googleCredentialHandler({ isActive, config, onUser, onError, now = Date.now }: {
+  isActive: () => boolean
+  config: GoogleConfig
+  onUser: (user: SessionUser) => void
+  onError: (message: string) => void
+  now?: () => number
+}): (response: { credential?: string }) => void {
+  return (response) => {
+    if (!isActive()) return
+    try {
+      if (!response.credential) throw new Error('Google no devolvió una credencial.')
+      onUser(parseGoogleCredential(response.credential, config, now()))
+    } catch (e) {
+      onError(e instanceof Error ? e.message : 'No pudimos iniciar sesión.')
+    }
+  }
+}
+
+/** Reading window.sessionStorage or window.localStorage throws when the browser blocks site data. */
+function browserStorage(name: 'sessionStorage' | 'localStorage'): Storage | undefined {
+  try {
+    return globalThis[name]
+  } catch {
+    return undefined
+  }
+}
+
 function isSessionUser(value: unknown): value is SessionUser {
   if (!value || typeof value !== 'object') return false
   const user = value as Record<string, unknown>
@@ -151,7 +182,7 @@ function isSessionUser(value: unknown): value is SessionUser {
  * so editing sessionStorage cannot raise permissions or keep an account that lost access.
  */
 export function readStoredUser(
-  google: GoogleConfig | null, now = Date.now(), storage: Storage | undefined = globalThis.sessionStorage,
+  google: GoogleConfig | null, now = Date.now(), storage: Storage | undefined = browserStorage('sessionStorage'),
   users: readonly LocalUser[] = TEST_USERS,
 ): SessionUser | null {
   try {
@@ -174,7 +205,7 @@ export function readStoredUser(
   }
 }
 
-export function storeUser(user: SessionUser, storage: Storage | undefined = globalThis.sessionStorage): void {
+export function storeUser(user: SessionUser, storage: Storage | undefined = browserStorage('sessionStorage')): void {
   try {
     storage?.setItem(USER_STORAGE_KEY, JSON.stringify(user))
   } catch {
@@ -182,7 +213,7 @@ export function storeUser(user: SessionUser, storage: Storage | undefined = glob
   }
 }
 
-export function clearStoredUser(storage: Storage | undefined = globalThis.sessionStorage): void {
+export function clearStoredUser(storage: Storage | undefined = browserStorage('sessionStorage')): void {
   try {
     storage?.removeItem(USER_STORAGE_KEY)
   } catch {
@@ -191,7 +222,7 @@ export function clearStoredUser(storage: Storage | undefined = globalThis.sessio
 }
 
 /** «Recordar mis datos» keeps only the username or email, never the password. */
-export function readRememberedIdentifier(storage: Storage | undefined = globalThis.localStorage): string {
+export function readRememberedIdentifier(storage: Storage | undefined = browserStorage('localStorage')): string {
   try {
     return storage?.getItem(REMEMBER_KEY) ?? ''
   } catch {
@@ -199,7 +230,7 @@ export function readRememberedIdentifier(storage: Storage | undefined = globalTh
   }
 }
 
-export function rememberIdentifier(identifier: string | null, storage: Storage | undefined = globalThis.localStorage): void {
+export function rememberIdentifier(identifier: string | null, storage: Storage | undefined = browserStorage('localStorage')): void {
   try {
     if (identifier) storage?.setItem(REMEMBER_KEY, identifier.trim())
     else storage?.removeItem(REMEMBER_KEY)
