@@ -105,6 +105,39 @@ const normalizeProvider = (provider: string): string => provider.trim().toLowerC
 export const licenseId = (provider: string, email: string): string =>
   JSON.stringify([normalizeProvider(provider), normalizeEmail(email)])
 
+export const MAX_ALIAS_MATCHES = 5
+
+export interface AliasSearch {
+  /** False when the account has no name and surname to compare. */
+  comparable: boolean
+  total: number
+  matches: Employee[]
+}
+
+const nameWords = (name: string): Set<string> => new Set(
+  name.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().split(/[^\p{L}\p{N}]+/u).filter(Boolean),
+)
+
+/**
+ * People whose full name could be the account's, only to help a human review the case. A person
+ * counts when every word of the shorter name is in the longer one and that shorter name has at
+ * least a name and a surname. It never merges accounts or changes the reconciliation.
+ */
+export function findPossibleAliases(accountName: string, employees: Employee[], limit = MAX_ALIAS_MATCHES): AliasSearch {
+  const account = nameWords(accountName)
+  if (account.size < 2) return { comparable: false, total: 0, matches: [] }
+  const found = employees
+    .map((employee) => ({ employee, words: nameWords(employee.name) }))
+    .filter(({ words }) => {
+      if (words.size < 2) return false
+      const [shorter, longer] = words.size <= account.size ? [words, account] : [account, words]
+      return [...shorter].every((word) => longer.has(word))
+    })
+    .sort((a, b) => Math.abs(a.words.size - account.size) - Math.abs(b.words.size - account.size)
+      || a.employee.name.localeCompare(b.employee.name, 'es'))
+  return { comparable: true, total: found.length, matches: found.slice(0, limit).map(({ employee }) => employee) }
+}
+
 export function isValidEmail(value: string): boolean {
   const email = normalizeEmail(value)
   if (email.length > 254 || email.includes('..')) return false

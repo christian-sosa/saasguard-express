@@ -26,6 +26,7 @@ import {
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
   parseCsv,
+  findPossibleAliases,
   validateEmployees,
   validateLicenseFiles,
   reconcile,
@@ -251,6 +252,50 @@ function CsvPreview({ upload }: { upload: Upload }) {
       {upload.table.rows.length === 0 && (
         <p>El archivo no tiene filas de datos.</p>
       )}
+    </details>
+  );
+}
+
+function AliasCheck({
+  accountName,
+  employees,
+}: {
+  accountName: string;
+  employees: Employee[];
+}) {
+  const search = findPossibleAliases(accountName, employees);
+  return (
+    <details className="alias-check">
+      <summary>Verificar posibles alias en la nómina</summary>
+      <p>
+        Comparamos el nombre y apellido de la cuenta con la nómina cargada. No
+        unimos cuentas por similitud del nombre: si hay dudas, consultá a RRHH.
+      </p>
+      {!search.comparable ? (
+        <p>Esta cuenta no informa nombre y apellido, así que no se puede comparar.</p>
+      ) : search.total === 0 ? (
+        <p>
+          Ninguna de las {employees.length} personas de la nómina tiene este
+          nombre y apellido.
+        </p>
+      ) : (
+        <ul>
+          {search.matches.map((employee) => (
+            <li key={employee.email}>
+              {employee.name} · {employee.email}
+            </li>
+          ))}
+        </ul>
+      )}
+      {search.total > search.matches.length && (
+        <p>
+          Se muestran {search.matches.length} de {search.total} coincidencias.
+        </p>
+      )}
+      <p>
+        Una coincidencia de nombre no confirma que las cuentas pertenezcan a la
+        misma persona.
+      </p>
     </details>
   );
 }
@@ -1717,34 +1762,7 @@ export function App({
                 placeholder="Por ejemplo: verificado con RRHH; no corresponde a un alias de una cuenta vigente."
               />
             </label>
-            <details className="alias-check">
-              <summary>Verificar posibles alias en la nómina</summary>
-              <p>
-                Buscá manualmente en RRHH. No unimos cuentas por similitud del
-                nombre.
-              </p>
-              <ul>
-                {employees
-                  .filter(
-                    (e) =>
-                      e.name &&
-                      active.name &&
-                      e.name
-                        .toLowerCase()
-                        .includes(active.name.split(" ")[0].toLowerCase()),
-                  )
-                  .slice(0, 10)
-                  .map((e) => (
-                    <li key={e.email}>
-                      {e.name} · {e.email}
-                    </li>
-                  ))}
-              </ul>
-              <p>
-                Una coincidencia de nombre no confirma que las cuentas
-                pertenezcan a la misma persona.
-              </p>
-            </details>
+            <AliasCheck accountName={active.name} employees={employees} />
           </div>
           {error && (
             <p role="alert" className="field-error">

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  compareSnapshots, costToCents, createSnapshot, filterCandidates, isExpired, sessionExpiresAt, licenseId,
+  compareSnapshots, costToCents, createSnapshot, filterCandidates, findPossibleAliases, isExpired, sessionExpiresAt, licenseId,
   normalizeEmail, parseCsv, parseMonthlyCost, parseSnapshot, pickEmailHeader, reconcile, SESSION_MAX_AGE_MS,
   suggestEmailHeader, summarize, validateEmployees, validateLicenseFiles, validateLicenses, validateSnapshot,
   type Candidate, type License,
@@ -369,3 +369,63 @@ describe('columna de email que se propone al cargar un archivo (SPIKE-01)', () =
     expect(pickEmailHeader([])).toBe('')
   })
 })
+
+describe('possible aliases by full name', () => {
+  const person = (name: string, email = `${name.toLowerCase().replace(/\W+/g, '.')}@empresa.test`) => ({ name, email });
+
+  it('finds a person with the same name and surname under another email', () => {
+    const search = findPossibleAliases('Ana Pérez', [person('Ana Pérez', 'aperez@empresa.test'), person('Bruno Díaz')]);
+    expect(search.comparable).toBe(true);
+    expect(search.total).toBe(1);
+    expect(search.matches.map((e) => e.email)).toEqual(['aperez@empresa.test']);
+  });
+
+  it('does not list people who only share the first name', () => {
+    const search = findPossibleAliases('Ana Pérez', [person('Ana Gómez'), person('Ana Ruiz'), person('Mariana Pérez')]);
+    expect(search).toMatchObject({ comparable: true, total: 0, matches: [] });
+  });
+
+  it('ignores case, accents, punctuation and word order', () => {
+    const search = findPossibleAliases('PEREZ, Ana', [person('Ana Pérez')]);
+    expect(search.total).toBe(1);
+  });
+
+  it('accepts an extra middle name on either side', () => {
+    expect(findPossibleAliases('Ana Pérez', [person('Ana María Pérez')]).total).toBe(1);
+    expect(findPossibleAliases('Ana María Pérez', [person('Ana Pérez')]).total).toBe(1);
+  });
+
+  it('does not list the synthetic names of the test sets, which differ only in their number', () => {
+    const search = findPossibleAliases('Persona ficticia 045', [person('Persona ficticia 001'), person('Persona ficticia 002')]);
+    expect(search.total).toBe(0);
+  });
+
+  it('cannot compare an account without name and surname', () => {
+    for (const name of ['', '   ', 'Ana', 'Ana Ana']) {
+      expect(findPossibleAliases(name, [person('Ana Pérez')])).toEqual({ comparable: false, total: 0, matches: [] });
+    }
+  });
+
+  it('skips people in the payroll without name and surname', () => {
+    expect(findPossibleAliases('Ana Pérez', [person('', 'a@empresa.test'), person('Ana', 'b@empresa.test')]).total).toBe(0);
+  });
+
+  it('shows at most five, exact names first, and reports how many there are', () => {
+    const people = [
+      person('Ana María Pérez', 'c@empresa.test'), person('Ana Luisa Pérez', 'd@empresa.test'), person('Ana Sofía Pérez', 'e@empresa.test'),
+      person('Ana Paula Pérez', 'f@empresa.test'), person('Ana Inés Pérez', 'g@empresa.test'), person('Ana Pérez', 'a@empresa.test'),
+      person('Pérez, Ana', 'b@empresa.test'),
+    ];
+    const search = findPossibleAliases('Ana Pérez', people);
+    expect(search.total).toBe(7);
+    expect(search.matches).toHaveLength(5);
+    expect(search.matches.slice(0, 2).map((e) => e.email).sort()).toEqual(['a@empresa.test', 'b@empresa.test']);
+  });
+
+  it('leaves the payroll untouched', () => {
+    const people = [person('Ana Pérez'), person('Ana Gómez')];
+    const copy = structuredClone(people);
+    findPossibleAliases('Ana Pérez', people);
+    expect(people).toEqual(copy);
+  });
+});

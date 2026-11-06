@@ -1,0 +1,27 @@
+[
+  {
+    "name": "mismo nombre y apellido con otro email",
+    "ok": true,
+    "detail": "Ana Pérez · ana.perez@example.test | Ana María Pérez · ana.maria@example.test"
+  },
+  {
+    "name": "la ficha no confirma ni une la cuenta",
+    "ok": true,
+    "detail": "sigue la aclaración de que una coincidencia no confirma identidad"
+  },
+  {
+    "name": "cuenta sin apellido",
+    "ok": true,
+    "detail": "avisa que no se puede comparar y no lista a nadie"
+  },
+  {
+    "name": "sin nadie con ese nombre y apellido",
+    "ok": true,
+    "detail": "informa que ninguna de las 5 personas coincide"
+  },
+  {
+    "name": "hallazgo del Sprint 2: nombres que comparten la primera palabra",
+    "ok": true,
+    "detail": "ya no lista a casi toda la nómina: 0 coincidencias"
+  }
+]
