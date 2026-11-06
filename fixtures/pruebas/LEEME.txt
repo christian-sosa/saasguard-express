@@ -1,12 +1,13 @@
 PRUEBAS SAASGUARD
 
-Cuatro juegos independientes de datos sinteticos para https://saasguard-express.vercel.app/
+Cinco juegos independientes de datos sinteticos para https://saasguard-express.vercel.app/
 No mezclar las nominas ni las licencias de juegos diferentes.
 
 01_simple: 5 personas, 8 licencias, 3 candidatas.
 02_mediano_multiplataforma: 30 personas, 90 licencias, 30 candidatas.
 03_grande_limite: 250 personas, 1.000 licencias, 200 candidatas.
 04_validacion_errores: primero observar bloqueos y luego reemplazar por el par corregido (4 personas, 7 licencias, 3 candidatas).
+05_casos_borde: cero candidatas (3 personas, 3 licencias) y homonimo con duplicados (3 personas, 5 licencias, 4 candidatas). Se usa en la matriz EN-02.
 
 Cada carpeta incluye GUIA.txt con instrucciones y resultados exactos.
 Todos los nombres son ficticios y todos los emails validos usan example.test. No hay datos de usuarios, contrasenas, sueldos ni archivos reales. Los costos se expresan en USD mensuales por cuenta.

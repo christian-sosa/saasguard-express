@@ -1,0 +1,16 @@
+PRUEBA DE CASOS BORDE
+
+Todos los datos son ficticios. Usar UN par de archivos por vez. Dejar el costo por defecto vacio, confirmar nomina vigente y ejecutar.
+
+A. cero_candidatos
+Resultado esperado: 3 personas, 3 licencias unicas, 3 coincidencias y 0 candidatas.
+Las mayusculas y los espacios exteriores de los emails se normalizan y no generan falsas candidatas.
+La pantalla explica que no hay cuentas fuera de la nomina y el checklist queda deshabilitado.
+
+B. homonimo_y_duplicados
+Resultado esperado: 3 personas, 5 licencias unicas, 1 coincidencia y 4 candidatas. Se informa 1 fila duplicada, consolidada una sola vez.
+Homonimo: aperez@example.test se llama Ana Perez, igual que ana.perez@example.test de la nomina. Sigue como candidata: el mismo nombre con otro email no se reconcilia solo.
+Mismo email en dos proveedores: dario.sosa@example.test aparece en Slack y en Jira como dos cuentas, cada una con su costo.
+Costo desconocido: elena.vera@example.test no informa costo. Se muestra Sin informar y no suma cero.
+Potencial mensual conocido: USD 23,00. Candidatas con costo conocido: 3. Costos desconocidos: 1.
+Una candidata requiere revision; no demuestra una baja ni ahorro realizado.

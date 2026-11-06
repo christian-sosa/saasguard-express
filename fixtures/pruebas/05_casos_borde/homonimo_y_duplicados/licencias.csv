@@ -1,0 +1,7 @@
+email,nombre,proveedor,plan,costo_mensual
+aperez@example.test,Ana Pérez,Slack,Pro,10
+bruno.diaz@example.test,Bruno Díaz,Slack,Pro,10
+dario.sosa@example.test,Darío Sosa,Slack,Pro,8
+dario.sosa@example.test,Darío Sosa,Slack,Pro,8
+dario.sosa@example.test,Darío Sosa,Jira,Standard,5
+elena.vera@example.test,Elena Vera,Slack,Pro,
