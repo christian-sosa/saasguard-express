@@ -33,7 +33,7 @@ Antes de publicar esta actualización, comprobar el límite exacto de 02:59:59.9
 | Instalación | `npm ci` |
 | Build | `npm run build` |
 | Directorio público | `dist/client` |
-| Variables de entorno | Ninguna |
+| Variables de entorno | `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ALLOWED_EMAILS` y `VITE_GOOGLE_ALLOWED_DOMAIN`. Son opcionales: sólo hacen falta para «Continuar con Google» |
 | Dominio | Subdominio gratuito `.vercel.app` |
 
 `vercel.json` versiona el build, la salida estática, la reescritura de navegación y los encabezados. El empaquetado existente para Sites se conserva; Vercel sirve únicamente `dist/client`, sin ejecutar el worker de Sites.
@@ -55,6 +55,23 @@ Sin `VITE_GOOGLE_CLIENT_ID` no aparece el botón de Google y sólo funciona el u
 `vercel.json` permite en la CSP únicamente los recursos de `https://accounts.google.com/gsi/` y usa `Referrer-Policy: strict-origin-when-cross-origin`, que el botón de Google necesita.
 
 Límites: no hay backend. Los usuarios de prueba viajan dentro del código como hash SHA-256 con sal, el token de Google se valida en el navegador (emisor, audiencia, vencimiento, email verificado y cuenta admitida) sin verificar su firma, y los permisos se aplican en la interfaz. El login identifica a quien opera y ordena qué puede hacer; no es una autorización de servidor ni protege datos, que siguen en el navegador. Tras cinco intentos fallidos se bloquean los intentos por 30 segundos en esa pestaña. No se piden permisos sobre Google Workspace ni se leen usuarios por API. El perfil de la sesión vive en `sessionStorage` (8 horas para usuario y contraseña, el vencimiento del token para Google) y el rol se recalcula al leerlo; «Recordar mis datos» guarda sólo el usuario en `localStorage`.
+
+## Publicación del Sprint 3
+
+La versión pública sigue en el Sprint 1 mientras los PR no se mergeen. Para publicar:
+
+1. Mergear el PR #1, después el #2 y después los PR del Sprint 3 que el equipo acepte. Si la rama de un PR se borra al mergearlo, GitHub cambia solo la base de los que dependen de ella. Si no, hay que cambiarla a mano.
+2. Crear el cliente OAuth y cargar las variables, como indica la sección anterior. Sin ellas se publica con usuario y contraseña, sin el botón de Google.
+3. Comprobar que la verificación de GitHub y el despliegue de Vercel terminen bien.
+4. Sobre la versión mergeada, correr `node docs/evidencia/sprint3/en02-ensayo.cjs` y anotar el resultado en [la matriz EN-02](en-02-matriz-verificacion.md).
+5. En la URL pública, comprobar a mano:
+   - [ ] Se entra con un usuario de cada rol y cada uno ve sólo sus acciones.
+   - [ ] El juego `02_mediano_multiplataforma` da 90 cuentas, 60 coincidencias y 30 candidatas.
+   - [ ] Excel y PDF se descargan con la selección.
+   - [ ] Una cuenta de Google admitida entra y una no admitida recibe el mensaje de acceso. Si no se configuró Google, anotar que no se probó.
+   - [ ] La consola no muestra errores de CSP.
+   - [ ] Cerrar la auditoría y recargar deja la app sin datos.
+6. Registrar la fecha y el commit publicado en [`resultado-validacion.md`](resultado-validacion.md).
 
 ## Operación y costo
 

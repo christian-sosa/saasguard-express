@@ -85,7 +85,7 @@ El registro del piloto es la única persistencia adicional en el navegador: `loc
 
 La limpieza se ejecuta en el navegador: si la pestaña está activa, se programa para medianoche; si estaba suspendida, se comprueba al volver a ella o al intentar una operación. Si el navegador estaba cerrado, los agregados vencidos se eliminan al abrir la app nuevamente. No hay un proceso nocturno ni una base de datos en Vercel o Supabase. Vercel entrega la aplicación; los datos de trabajo permanecen en cada navegador. Los CSV originales y los reportes o snapshots descargados permanecen en el equipo del usuario hasta que éste los borre.
 
-No hay backend, cuentas de usuarios ni permisos de rol autenticados. Los responsables escritos son datos de revisión, no autorizaciones. No se implementan OAuth, APIs de proveedores, bajas automáticas, IA ni pagos. Este MVP no incluye SLA ni una evaluación de seguridad de producción. El tiempo informado corresponde al cruce en el navegador; para evaluar el objetivo del recorrido completo hay que registrar también el entorno y la medición correspondiente.
+No hay backend ni autorización real: el login y los roles se aplican sólo en el navegador, sirven para recorrer el MVP y no protegen datos. Los responsables escritos son datos de revisión, no autorizaciones. No se implementan conexiones por OAuth o API con los proveedores de SaaS, bajas automáticas, IA ni pagos. Este MVP no incluye SLA ni una evaluación de seguridad de producción. El tiempo informado corresponde al cruce en el navegador; para evaluar el objetivo del recorrido completo hay que registrar también el entorno y la medición correspondiente.
 
 ## Decisión técnica y próximos pasos
 
