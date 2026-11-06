@@ -66,7 +66,7 @@ El botón carga la demo integrada; las plantillas son otro conjunto pequeño par
 
 ## Juegos de CSV para pruebas manuales
 
-Los cuatro juegos de [fixtures/pruebas](fixtures/pruebas/LEEME.txt) contienen únicamente datos sintéticos. La carpeta [pruebas en Google Drive](https://drive.google.com/drive/folders/1i1J6-JrD6jGmc6fOfWLYmAj0pHw1pOBO) permite compartirlos para probar la página publicada. Cada juego incluye `GUIA.txt`; no deben mezclarse archivos de juegos distintos.
+Los cinco juegos de [fixtures/pruebas](fixtures/pruebas/LEEME.txt) contienen únicamente datos sintéticos. La carpeta [pruebas en Google Drive](https://drive.google.com/drive/folders/1i1J6-JrD6jGmc6fOfWLYmAj0pHw1pOBO) permite compartirlos para probar la página publicada. Cada juego incluye `GUIA.txt`; no deben mezclarse archivos de juegos distintos.
 
 | Juego | Personas RRHH | Licencias | Candidatos | Potencial mensual conocido |
 |---|---:|---:|---:|---:|
