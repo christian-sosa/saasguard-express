@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { describe, expect, it } from 'vitest';
 import {
-  AttemptLimiter, PASSWORD_SESSION_MS, USER_STORAGE_KEY, clearStoredUser, googleConfig, parseAllowedEmails,
+  AttemptLimiter, PASSWORD_SESSION_MS, USER_STORAGE_KEY, clearStoredUser, googleConfig, googleCredentialHandler, parseAllowedEmails,
   parseGoogleCredential, readRememberedIdentifier, readStoredUser, rememberIdentifier, signInWithPassword, storeUser,
   type GoogleConfig,
 } from './auth';
@@ -167,5 +167,78 @@ describe('stored session', () => {
     expect(storage.length).toBe(1);
     rememberIdentifier(null, storage);
     expect(readRememberedIdentifier(storage)).toBe('');
+  });
+});
+
+describe('blocked browser storage', () => {
+  const blocked = () => { throw new DOMException('The operation is insecure.', 'SecurityError'); };
+  function blockStorage(name: 'sessionStorage' | 'localStorage') {
+    const original = Object.getOwnPropertyDescriptor(globalThis, name);
+    Object.defineProperty(globalThis, name, { configurable: true, get: blocked });
+    return () => {
+      if (original) Object.defineProperty(globalThis, name, original);
+      else delete (globalThis as Record<string, unknown>)[name];
+    };
+  }
+
+  it('reads no signed-in user and keeps going when sessionStorage throws on access', () => {
+    const restore = blockStorage('sessionStorage');
+    try {
+      expect(readStoredUser(google, NOW)).toBeNull();
+      expect(() => storeUser({
+        email: 'owner@gmail.test', name: 'Owner', role: 'admin', method: 'google', expiresAt: NOW + 1000,
+      })).not.toThrow();
+      expect(() => clearStoredUser()).not.toThrow();
+    } finally {
+      restore();
+    }
+  });
+
+  it('remembers nothing and keeps going when localStorage throws on access', () => {
+    const restore = blockStorage('localStorage');
+    try {
+      expect(readRememberedIdentifier()).toBe('');
+      expect(() => rememberIdentifier('ana.it')).not.toThrow();
+      expect(() => rememberIdentifier(null)).not.toThrow();
+    } finally {
+      restore();
+    }
+  });
+});
+
+describe('Google credential callback', () => {
+  it('signs in with a valid credential while the login screen is active', () => {
+    const accepted: string[] = [];
+    const errors: string[] = [];
+    const handle = googleCredentialHandler({
+      isActive: () => true, config: google, onUser: (user) => accepted.push(user.email), onError: (m) => errors.push(m), now: () => NOW,
+    });
+    handle({ credential: token(claims()) });
+    expect(accepted).toEqual(['owner@gmail.test']);
+    expect(errors).toEqual([]);
+  });
+
+  it('reports a missing or rejected credential while the login screen is active', () => {
+    const errors: string[] = [];
+    const handle = googleCredentialHandler({
+      isActive: () => true, config: google, onUser: () => { throw new Error('should not sign in'); }, onError: (m) => errors.push(m), now: () => NOW,
+    });
+    handle({});
+    handle({ credential: token(claims({ email: 'other@gmail.test' })) });
+    expect(errors).toHaveLength(2);
+    expect(errors[0]).toMatch(/credencial/);
+    expect(errors[1]).toMatch(/no tiene acceso/);
+  });
+
+  it('ignores a late response once the login screen is gone, without changing the user or showing an error', () => {
+    const accepted: string[] = [];
+    const errors: string[] = [];
+    const handle = googleCredentialHandler({
+      isActive: () => false, config: google, onUser: (user) => accepted.push(user.email), onError: (m) => errors.push(m), now: () => NOW,
+    });
+    handle({ credential: token(claims()) });
+    handle({});
+    expect(accepted).toEqual([]);
+    expect(errors).toEqual([]);
   });
 });

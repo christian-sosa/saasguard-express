@@ -2,6 +2,8 @@
 
 Fecha: 03/10/2026. Referencia: backlog de SaaSGuard Express, HU01–HU15. Este documento prepara la revisión y no afirma que los casos ya hayan pasado.
 
+Actualización del 06/11/2026: la verificación por criterio de aceptación, con quién la hace y dónde va la evidencia, está en [`en-02-matriz-verificacion.md`](en-02-matriz-verificacion.md).
+
 Para cada fila registrar versión o commit, navegador, datos usados, resultado observado, persona que revisa y evidencia. Marcar una HU como cumplida requiere comprobar sus criterios de aceptación; tener una pantalla o un botón no alcanza.
 
 ## Datos ficticios incluidos

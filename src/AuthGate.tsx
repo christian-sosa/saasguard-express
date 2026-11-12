@@ -21,7 +21,7 @@ import {
   GSI_SCRIPT_URL,
   clearStoredUser,
   googleConfig,
-  parseGoogleCredential,
+  googleCredentialHandler,
   readRememberedIdentifier,
   readStoredUser,
   rememberIdentifier,
@@ -86,15 +86,12 @@ function GoogleButton({
           client_id: config.clientId,
           auto_select: false,
           ux_mode: "popup",
-          callback: (response) => {
-            try {
-              if (!response.credential)
-                throw new Error("Google no devolvió una credencial.");
-              onUser(parseGoogleCredential(response.credential, config));
-            } catch (e) {
-              onError(e instanceof Error ? e.message : "No pudimos iniciar sesión.");
-            }
-          },
+          callback: googleCredentialHandler({
+            isActive: () => active,
+            config,
+            onUser,
+            onError,
+          }),
         });
         id.renderButton(button.current, {
           theme: "filled_black",

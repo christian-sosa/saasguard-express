@@ -1,0 +1,22 @@
+[
+  {
+    "name": "sessionStorage bloqueado",
+    "ok": true,
+    "detail": "la pantalla de ingreso se ve y se puede entrar con contraseña"
+  },
+  {
+    "name": "localStorage bloqueado",
+    "ok": true,
+    "detail": "la pantalla de ingreso se ve y se puede entrar con contraseña"
+  },
+  {
+    "name": "respuesta tardía de Google después del ingreso con contraseña",
+    "ok": true,
+    "detail": "la cuenta sigue en admin con rol admin y la auditoría abierta"
+  },
+  {
+    "name": "ingreso con Google mientras la pantalla de ingreso está activa",
+    "ok": true,
+    "detail": "entra lector.google@example.test con rol viewer"
+  }
+]

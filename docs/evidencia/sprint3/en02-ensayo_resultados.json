@@ -1,0 +1,65 @@
+[
+  {
+    "id": "CT-01",
+    "name": "Cero candidatos",
+    "ok": true,
+    "seconds": 0.5,
+    "detail": "3 coincidencias, 0 candidatas, mensaje claro y checklist deshabilitado"
+  },
+  {
+    "id": "CT-02",
+    "name": "Errores de CSV y recuperación",
+    "ok": true,
+    "seconds": 0.5,
+    "detail": "cruce bloqueado con filas informadas; al corregir no quedan errores viejos: 7 cuentas, 4 coincidencias, 3 candidatas"
+  },
+  {
+    "id": "CT-03",
+    "name": "Duplicados",
+    "ok": true,
+    "seconds": 0.2,
+    "detail": "aviso de duplicado; 5 cuentas únicas, 4 candidatas y USD 23,00: la fila repetida no suma"
+  },
+  {
+    "id": "CT-04",
+    "name": "Correo normalizado",
+    "ok": true,
+    "seconds": 0.5,
+    "detail": "los emails con mayúsculas y espacios no generan falsas candidatas: 90 cuentas, 60 coincidencias, 30 candidatas"
+  },
+  {
+    "id": "CT-05",
+    "name": "Homónimo",
+    "ok": true,
+    "seconds": 0.2,
+    "detail": "aperez@ sigue como candidata; la ficha muestra a ana.perez@ y aclara que no confirma identidad"
+  },
+  {
+    "id": "CT-06",
+    "name": "Costo desconocido",
+    "ok": true,
+    "seconds": 0,
+    "detail": "la fila dice «Sin informar» y la fórmula aclara que no suma: Ahorro potencial mensual (USD) = suma de 3 costos conocidos = US$ 23,00. 1 cuenta tiene costo sin informar y no suman: no se reemplazan por cero ni por un promedio."
+  },
+  {
+    "id": "CT-07",
+    "name": "Exportación de la selección",
+    "ok": true,
+    "seconds": 0.3,
+    "detail": "Excel con las 2 cuentas seleccionadas y «Sin informar»; PDF generado (12086 bytes)"
+  },
+  {
+    "id": "CT-08",
+    "name": "Ensayo de tiempo de HU-07",
+    "ok": true,
+    "seconds": 0.6,
+    "detail": "250 personas y 1.000 licencias: 275 ms desde el clic hasta el resultado (objetivo: menos de 60 segundos)"
+  },
+  {
+    "id": "CT-09",
+    "name": "Eliminación de datos de HU-15",
+    "ok": true,
+    "seconds": 1.2,
+    "detail": "pide confirmar descargas; sin datos en pantalla, almacenamiento, consola, recarga ni en otra sesión"
+  }
+]

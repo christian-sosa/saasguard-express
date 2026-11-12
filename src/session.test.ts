@@ -179,3 +179,40 @@ describe('local pilot aggregate privacy and validity', () => {
     expect(storage.length).toBe(1);
   });
 });
+
+describe('pilot records with blocked storage', () => {
+  it('reads and clears without throwing when localStorage throws on access', () => {
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('The operation is insecure.', 'SecurityError'); },
+    });
+    try {
+      expect(readPilotRuns()).toEqual([]);
+      expect(() => clearPilotRuns()).not.toThrow();
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+      else delete (globalThis as Record<string, unknown>).localStorage;
+    }
+  });
+});
+
+describe('saving a pilot record with blocked storage', () => {
+  it('explains the problem in Spanish instead of showing the browser error', () => {
+    vi.setSystemTime(new Date('2026-10-28T15:00:00.000Z'));
+    const original = Object.getOwnPropertyDescriptor(globalThis, 'localStorage');
+    Object.defineProperty(globalThis, 'localStorage', {
+      configurable: true,
+      get() { throw new DOMException('The operation is insecure.', 'SecurityError'); },
+    });
+    try {
+      expect(() => savePilotRun({
+        organizationCode: 'ORG-1', completedAt: '2026-10-28T15:00:00.000Z', candidateCount: 2, selectedCount: 1,
+      })).toThrow(/no permite guardar/);
+    } finally {
+      if (original) Object.defineProperty(globalThis, 'localStorage', original);
+      else delete (globalThis as Record<string, unknown>).localStorage;
+      vi.useRealTimers();
+    }
+  });
+});
