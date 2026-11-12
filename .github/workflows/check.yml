@@ -16,3 +16,4 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run test:sites
+      - run: node --test tests/auth-server.test.mjs

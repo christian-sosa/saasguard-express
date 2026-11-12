@@ -1,14 +1,14 @@
 # Publicación de SaaSGuard Express
 
-Decisión del 16/10/2026: publicar el MVP académico en Vercel Hobby, con React, TypeScript y Vite. Se mantiene el procesamiento de CSV y las exportaciones en el navegador. No requiere una API, credenciales de servicios ni base de datos para su alcance actual.
+El MVP académico usa Vercel Hobby, React, TypeScript y Vite. La aplicación procesa los CSV y genera las exportaciones en el navegador. La función `/api/auth` verifica el acceso y administra la sesión. Los datos de auditoría permanecen en el navegador de cada usuario.
 
-Producción: [saasguard-express.vercel.app](https://saasguard-express.vercel.app/). Primer despliegue aprobado del commit `3fe26f715aba4ee22fb1d329e4a88e5566b8c704`: [detalle en Vercel](https://vercel.com/christian-sosas-projects-0c5f6ce7/saasguard-express/BtSCRz3CZLkkX7MKozqbfvMhm1Cc). Se verificó acceso HTTP sin cookies ni login y el recorrido de demo en navegador.
+El dominio de producción es [saasguard-express.vercel.app](https://saasguard-express.vercel.app/). El 16/10/2026 se verificaron el acceso HTTP y el recorrido de la demo de la primera versión publicada, que era de acceso abierto. [Despliegue del commit `3fe26f7`](https://vercel.com/christian-sosas-projects-0c5f6ce7/saasguard-express/BtSCRz3CZLkkX7MKozqbfvMhm1Cc)
 
 ## Datos y alcance
 
 Los CSV, candidatos, responsables y notas permanecen en la memoria de la pestaña y se eliminan al cerrar la auditoría, recargar o llegar a la próxima medianoche de Argentina. Los archivos originales y los reportes o snapshots descargados permanecen en el equipo. El registro agregado del piloto sigue siendo de un solo navegador y puede borrarse por separado; también vence diariamente y no es un historial compartido.
 
-Supabase no se utiliza en esta publicación. Fábrica de Fútbol tiene usuarios reales en otro proyecto Supabase Free; SaaSGuard no cambia sus tablas, Auth, claves ni configuración. Si se incorpora una necesidad concreta de cuentas o persistencia compartida, se diseñará en un proyecto independiente gratuito si hay cupo, junto con las reglas de acceso y conservación de datos. No se deben conectar las dos aplicaciones por comodidad.
+El MVP funciona con almacenamiento local para la auditoría y variables de entorno para las cuentas. Si se incorpora persistencia compartida, se diseñará en un proyecto independiente del de Fábrica de Fútbol, con reglas propias de acceso y conservación de datos.
 
 ## Actualización de retención y pruebas — 16/10/2026
 
@@ -31,41 +31,46 @@ Antes de publicar esta actualización, comprobar el límite exacto de 02:59:59.9
 | Preset | Vite |
 | Node.js | 24.x |
 | Instalación | `npm ci` |
-| Build | `npm run build` |
+| Build | `SAASGUARD_SERVER_AUTH=1 npm run build` |
 | Directorio público | `dist/client` |
-| Variables de entorno | `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ALLOWED_EMAILS` y `VITE_GOOGLE_ALLOWED_DOMAIN`. Son opcionales: sólo hacen falta para «Continuar con Google» |
+| Autenticación | Función `/api/auth`, con configuración de servidor |
+| Variables de entorno | `SAASGUARD_SESSION_SECRET`, `SAASGUARD_PASSWORD_USERS` para las cuentas con contraseña y las variables opcionales de Google descritas abajo |
 | Dominio | Subdominio gratuito `.vercel.app` |
 
-`vercel.json` versiona el build, la salida estática, la reescritura de navegación y los encabezados. El empaquetado existente para Sites se conserva; Vercel sirve únicamente `dist/client`, sin ejecutar el worker de Sites.
+`vercel.json` versiona el build, la salida estática, las rutas y los encabezados. Vercel sirve `dist/client` y ejecuta `api/auth.js` como función. El build de Vercel siempre selecciona el modo de servidor. La pantalla indica que el ingreso no está disponible si falta una clave de sesión válida. El empaquetado para Sites tiene su propio worker.
 
-La política CSP permite scripts, estilos, fuentes e imágenes locales y bloquea conexiones de la app a APIs externas (`connect-src 'none'`). También restringe la inclusión en iframes, formularios y plugins. No se incorporan analytics ni envío de nóminas. Cambiar a una API o Supabase requiere revisar expresamente esa política.
+La política CSP permite que la aplicación se conecte a `/api/auth` en el mismo origen y permite los recursos de Google Identity Services (`https://accounts.google.com/gsi/`) para el botón opcional. Los datos de auditoría se procesan localmente.
 
-## Login con Google — 28/10/2026
+## Configurar el acceso
 
-Decisión del 28/10/2026 (tarjeta «Decisión · Login con Google» del Sprint 2): la app pide iniciar sesión con usuario o email y contraseña, o con «Continuar con Google». Cada cuenta tiene un rol (Administración, IT, People Operations, Finanzas o Sólo lectura) que define qué puede hacer. Los usuarios de prueba y sus permisos están en [usuarios de prueba](usuarios-de-prueba.md).
+En Vercel, cargá estas variables de servidor para el entorno que vayas a publicar. Para probar la misma función con `npm run dev`, usá `.env.local` con valores de prueba. [Variables de ejemplo](../.env.example)
 
-Para activar Google:
+- `SAASGUARD_SESSION_SECRET` contiene 32 bytes aleatorios en hexadecimal (64 dígitos). Podés generarlos con `crypto.randomBytes(32)` de Node.js.
+- `SAASGUARD_PASSWORD_USERS` contiene un arreglo JSON. Cada cuenta tiene `username`, `email`, `name`, `role`, `salt` y `hash`. Generá un `salt` aleatorio por cuenta, calculá el hash con `scrypt(contraseña, salt, 64)` usando los bytes del salt y guardá `salt` y `hash` en hexadecimal. Los roles disponibles son `admin`, `it`, `people`, `finance` y `viewer`. Usá `[]` si la publicación se configura exclusivamente con Google.
 
-1. En Google Cloud Console, crear un cliente OAuth de tipo «Aplicación web» (no tiene costo) y agregar como orígenes de JavaScript autorizados `http://localhost:5173` y `https://saasguard-express.vercel.app`.
-2. Cargar en Vercel (y en `.env.local` para desarrollo) `VITE_GOOGLE_CLIENT_ID` y `VITE_GOOGLE_ALLOWED_EMAILS` con las cuentas admitidas y su rol (`email:rol,email:rol`). Opcional: `VITE_GOOGLE_ALLOWED_DOMAIN` para admitir con sólo lectura cualquier cuenta de un dominio de Google Workspace. Los emails reales no se suben al repositorio.
-3. Volver a publicar: las variables se incorporan en el build.
+Guardá los valores de producción en Vercel y los de desarrollo en `.env.local`. El servidor verifica las credenciales y devuelve el rol con una sesión firmada. La cookie usa `HttpOnly`, `SameSite=Lax` y `Secure` en Vercel. La sesión con contraseña dura hasta ocho horas. Con Google vence cuando vence el token o a las ocho horas, lo que ocurra primero. «Recordar mis datos» conserva sólo el identificador en el navegador.
 
-Sin `VITE_GOOGLE_CLIENT_ID` no aparece el botón de Google y sólo funciona el usuario y la contraseña.
+La interfaz usa el rol para decidir qué acciones mostrar en la auditoría local. La API gestiona exclusivamente la autenticación. Los archivos y resultados quedan en la pestaña de quien los cargó.
 
-`vercel.json` permite en la CSP únicamente los recursos de `https://accounts.google.com/gsi/` y usa `Referrer-Policy: strict-origin-when-cross-origin`, que el botón de Google necesita.
+### Activar Google
 
-Límites: no hay backend. Los usuarios de prueba viajan dentro del código como hash SHA-256 con sal, el token de Google se valida en el navegador (emisor, audiencia, vencimiento, email verificado y cuenta admitida) sin verificar su firma, y los permisos se aplican en la interfaz. El login identifica a quien opera y ordena qué puede hacer; no es una autorización de servidor ni protege datos, que siguen en el navegador. Tras cinco intentos fallidos se bloquean los intentos por 30 segundos en esa pestaña. No se piden permisos sobre Google Workspace ni se leen usuarios por API. El perfil de la sesión vive en `sessionStorage` (8 horas para usuario y contraseña, el vencimiento del token para Google) y el rol se recalcula al leerlo; «Recordar mis datos» guarda sólo el usuario en `localStorage`.
+1. En Google Cloud Console, creá un cliente OAuth de tipo «Aplicación web». Agregá `https://saasguard-express.vercel.app` como origen de JavaScript autorizado y el origen local que uses para desarrollo, por ejemplo `http://localhost:5173`.
+2. Configurá `SAASGUARD_GOOGLE_CLIENT_ID` y una lista de cuentas con `SAASGUARD_GOOGLE_ALLOWED_EMAILS` en formato `email:rol,email:rol`. También podés configurar `SAASGUARD_GOOGLE_ALLOWED_DOMAIN` para asignar el rol `viewer` a las cuentas verificadas de ese dominio de Google Workspace. Si una cuenta tiene un rol explícito en la lista, ese rol tiene prioridad.
+3. Volvé a desplegar y verificá el acceso con una cuenta admitida y otra sin acceso. El servidor valida la firma, audiencia y vigencia del token de Google, el email verificado y la regla de acceso. El botón aparece cuando el servidor tiene el cliente y una lista o dominio autorizado. Con cuentas de contraseña aprovisionadas, podés publicar con ese método mientras Google queda pendiente de configuración.
+
+En `npm run dev` sin `SAASGUARD_SESSION_SECRET` se usan las cuentas sintéticas de [la demo local](usuarios-de-prueba.md). Las variables `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ALLOWED_EMAILS` y `VITE_GOOGLE_ALLOWED_DOMAIN` sirven para ensayos locales de esa demo. Vite las expone al navegador. Usá únicamente valores ficticios en ellas y reservá las variables `SAASGUARD_*` para la configuración de servidor.
 
 ## Publicación del Sprint 3
 
-La versión pública sigue en el Sprint 1 mientras los PR no se mergeen. Para publicar:
+Para publicar el incremento:
 
-1. Mergear el PR #1, después el #2 y después los PR del Sprint 3 que el equipo acepte. Si la rama de un PR se borra al mergearlo, GitHub cambia solo la base de los que dependen de ella. Si no, hay que cambiarla a mano.
-2. Crear el cliente OAuth y cargar las variables, como indica la sección anterior. Sin ellas se publica con usuario y contraseña, sin el botón de Google.
-3. Comprobar que la verificación de GitHub y el despliegue de Vercel terminen bien.
+1. Integrar los cambios aceptados y comprobar que `npm run check`, `npm run test:sites` y `npm audit` terminen bien.
+2. Cargar la clave de sesión y las cuentas de contraseña. Cargar el cliente de Google y sus reglas de acceso si se va a habilitar ese método.
+3. Comprobar que la verificación de GitHub y el despliegue de Vercel terminen bien para el commit de `main`.
 4. Sobre la versión mergeada, correr `node docs/evidencia/sprint3/en02-ensayo.cjs` y anotar el resultado en [la matriz EN-02](en-02-matriz-verificacion.md).
 5. En la URL pública, comprobar a mano:
-   - [ ] Se entra con un usuario de cada rol y cada uno ve sólo sus acciones.
+   - [ ] Se entra con las cuentas aprovisionadas y cada rol ve las acciones que le corresponden.
+   - [ ] La sesión se conserva al recargar y se elimina al cerrar sesión.
    - [ ] El juego `02_mediano_multiplataforma` da 90 cuentas, 60 coincidencias y 30 candidatas.
    - [ ] Excel y PDF se descargan con la selección.
    - [ ] Una cuenta de Google admitida entra y una no admitida recibe el mensaje de acceso. Si no se configuró Google, anotar que no se probó.
@@ -75,7 +80,7 @@ La versión pública sigue en el Sprint 1 mientras los PR no se mergeen. Para pu
 
 ## Operación y costo
 
-El despliegue usa Hobby para la demostración académica personal y no comercial, dentro de sus límites. No se contratan servicios pagos ni dominio. La dirección pública permite que otras personas ejecuten su propia sesión local; no permite ver la sesión de otro navegador ni otorga roles autenticados.
+El despliegue usa Hobby y el subdominio gratuito de Vercel para la demostración académica personal y no comercial. Cada cuenta admitida ejecuta su auditoría en su propio navegador.
 
 La integración con GitHub debe desplegar `main` y crear previews para las demás ramas. Antes de publicar código, ejecutar `npm run check`, `npm run test:sites` y `npm audit`. Verificar además en el dominio final la carga, la demo, la revisión humana, las descargas y el borrado. Un rollback del despliegue anterior no restaura las sesiones locales ya cerradas.
 

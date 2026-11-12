@@ -11,6 +11,7 @@ export interface Permissions {
   editCost: boolean
   exportXlsx: boolean
   exportPdf: boolean
+  exportSnapshot: boolean
   /** Register a real pilot run. */
   pilot: boolean
 }
@@ -24,14 +25,14 @@ export const ROLE_LABELS: Record<Role, string> = {
 }
 
 const NONE: Permissions = {
-  load: false, confirm: false, annotate: false, editCost: false, exportXlsx: false, exportPdf: false, pilot: false,
+  load: false, confirm: false, annotate: false, editCost: false, exportXlsx: false, exportPdf: false, exportSnapshot: false, pilot: false,
 }
 
 export const PERMISSIONS: Record<Role, Permissions> = {
-  admin: { load: true, confirm: true, annotate: true, editCost: true, exportXlsx: true, exportPdf: true, pilot: true },
-  it: { ...NONE, load: true, confirm: true, annotate: true, exportXlsx: true },
-  people: { ...NONE, load: true, annotate: true },
-  finance: { ...NONE, load: true, confirm: true, editCost: true, exportXlsx: true, exportPdf: true },
+  admin: { load: true, confirm: true, annotate: true, editCost: true, exportXlsx: true, exportPdf: true, exportSnapshot: true, pilot: true },
+  it: { ...NONE, load: true, confirm: true, annotate: true, exportXlsx: true, exportSnapshot: true },
+  people: { ...NONE, load: true, annotate: true, exportSnapshot: true },
+  finance: { ...NONE, load: true, confirm: true, editCost: true, exportXlsx: true, exportPdf: true, exportSnapshot: true },
   viewer: NONE,
 }
 

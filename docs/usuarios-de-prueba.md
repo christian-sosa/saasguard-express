@@ -6,11 +6,11 @@ Cuentas ficticias para probar el login y los permisos por rol. Se puede ingresar
 |---|---|---|---|---|
 | `admin` | `admin@saasguard.test` | `SG-admin-767f7f` | admin | Todo: carga, revisión, costos, Excel, PDF y registro del piloto |
 | `ignacio.it` | `ignacio.it@empresa.test` | `SG-it-755531` | it | Carga archivos, confirma casos al checklist, anota excepciones y descarga Excel |
-| `florencia.rrhh` | `florencia.rrhh@empresa.test` | `SG-people-5568a2` | people | Carga archivos y anota casos para RRHH o excepciones; no confirma bajas ni exporta |
+| `florencia.rrhh` | `florencia.rrhh@empresa.test` | `SG-people-5568a2` | people | Carga archivos, anota casos para RRHH o excepciones y descarga el snapshot JSON |
 | `gonzalo.finanzas` | `gonzalo.finanzas@empresa.test` | `SG-finance-eed82b` | finance | Carga archivos, corrige costos, confirma casos y descarga Excel y PDF |
-| `lector` | `lector@empresa.test` | `SG-viewer-57c530` | viewer | Sólo la demo con datos ficticios, sin cambios ni descargas |
+| `lector` | `lector@empresa.test` | `SG-viewer-57c530` | viewer | Sólo la demo con datos ficticios, sin cambios ni exportaciones de resultados |
 
-Todas las cuentas pueden ver resultados, buscar, filtrar, descargar el snapshot y cerrar su propia auditoría, porque borrar los datos cargados no puede depender del rol.
+Todas las cuentas pueden ver resultados, buscar, filtrar y cerrar su propia auditoría. Administración, IT, People Operations y Finanzas también pueden descargar el snapshot JSON.
 
 ## Ingreso con Google
 

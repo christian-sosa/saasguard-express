@@ -675,6 +675,10 @@ export function App({
   }
   function exportSnapshot() {
     if (!requireSession()) return;
+    if (!can.exportSnapshot) {
+      setError("Tu rol no permite descargar el snapshot.");
+      return;
+    }
     try {
       const subset = candidates.filter((c) => c.provider === snapshotProvider);
       downloadJson(
@@ -1477,30 +1481,32 @@ export function App({
               <IconArrowsDiff size={19} /> Comparar períodos
             </Button>
           </div>
-          <div className="snapshot-strip">
-            <label>
-              Snapshot completo
-              <select
-                value={snapshotProvider}
-                onChange={(e) => setSnapshotProvider(e.target.value)}
+          {can.exportSnapshot && (
+            <div className="snapshot-strip">
+              <label>
+                Snapshot completo
+                <select
+                  value={snapshotProvider}
+                  onChange={(e) => setSnapshotProvider(e.target.value)}
+                >
+                  {providers.map((p) => (
+                    <option key={p}>{p}</option>
+                  ))}
+                </select>
+              </label>
+              <Button
+                variant="ghost"
+                onClick={exportSnapshot}
+                disabled={!snapshotProvider}
               >
-                {providers.map((p) => (
-                  <option key={p}>{p}</option>
-                ))}
-              </select>
-            </label>
-            <Button
-              variant="ghost"
-              onClick={exportSnapshot}
-              disabled={!snapshotProvider}
-            >
-              <IconDownload size={16} /> Descargar snapshot
-            </Button>
-            <span>
-              Para comparar auditorías del mismo proveedor. No equivale al
-              checklist.
-            </span>
-          </div>
+                <IconDownload size={16} /> Descargar snapshot
+              </Button>
+              <span>
+                Para comparar auditorías del mismo proveedor. No equivale al
+                checklist.
+              </span>
+            </div>
+          )}
         </div>
       )}
 

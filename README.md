@@ -2,7 +2,7 @@
 
 MVP académico para cruzar una nómina vigente con exportaciones de licencias SaaS, revisar cuentas que no coinciden y preparar un checklist de bajas manuales. Está construido con React y TypeScript y procesa los archivos localmente en el navegador, tanto al ejecutar en el equipo como al servirlo desde Vercel.
 
-**App publicada:** [saasguard-express.vercel.app](https://saasguard-express.vercel.app/) · Vercel Hobby · Sin base compartida. Login con usuario y contraseña o Google, con roles (ver [usuarios de prueba](docs/usuarios-de-prueba.md)).
+El proyecto usa Vercel Hobby. Esta versión admite cuentas configuradas en el servidor y permite habilitar Google. [Dominio del proyecto](https://saasguard-express.vercel.app/) · [Guía de despliegue](docs/despliegue.md)
 
 La referencia visual es la versión v2 del [diseño de SaaSGuard en Figma](https://www.figma.com/design/7ooEdCaHVh4rrrBjXlipuA/SaaSGuard?node-id=0-1&p=f). Las cifras de la app se calculan desde los archivos cargados: no reproducen como hechos las cifras ilustrativas del prototipo. El resultado identifica candidatos a revisión y ahorro potencial, sin afirmar egresos, actividad real, accesos revocados ni ahorro logrado.
 
@@ -25,7 +25,7 @@ npm ci
 npm run dev
 ```
 
-Abrir la dirección local que informa Vite, normalmente http://localhost:5173. La configuración para publicar el mismo frontend estático en Vercel Hobby está en [despliegue](docs/despliegue.md); no requiere Supabase. La app pide iniciar sesión con los [usuarios de prueba](docs/usuarios-de-prueba.md); el botón de Google se activa con `VITE_GOOGLE_CLIENT_ID` y `VITE_GOOGLE_ALLOWED_EMAILS` (ver `.env.example`).
+Abrí la dirección local que informa Vite, normalmente `http://localhost:5173`. Sin clave de sesión configurada, Vite usa las [cuentas sintéticas de la demo](docs/usuarios-de-prueba.md). Para probar la autenticación de servidor localmente, configurá `SAASGUARD_SESSION_SECRET` y `SAASGUARD_PASSWORD_USERS` en `.env.local` según [`.env.example`](.env.example). En Vercel, `/api/auth` verifica las credenciales y devuelve el rol de la cuenta. El ingreso con Google requiere configurar el cliente y las cuentas o el dominio admitidos en el servidor. [Guía de despliegue](docs/despliegue.md)
 
 ```bash
 npm run check
@@ -81,16 +81,16 @@ En el cuarto juego se cargan primero los CSV de `con_errores`, que deben bloquea
 
 Actualización del 16/10/2026: los CSV, las cuentas y las decisiones viven en memoria de la página. Se descartan al recargar, cerrar y borrar la auditoría o alcanzar la próxima medianoche de Argentina (00:00 de `America/Argentina/Buenos_Aires`, actualmente 03:00 UTC), con un máximo absoluto de 24 horas desde el inicio. La actividad no renueva ese plazo. Esta regla reemplaza la conservación anterior de hasta 24 horas sin corte diario.
 
-El registro del piloto es la única persistencia adicional en el navegador: `localStorage` conserva como máximo 100 ejecuciones del día de Argentina con código de organización, fecha y conteos de candidatos/seleccionados, sin nómina, nombres ni emails. El cierre manual de la auditoría conserva esos agregados del día, que pueden borrarse con su propia acción y vencen igualmente a medianoche. Al leerlos, la app elimina de esa clave los registros anteriores al día actual, los futuros y los inválidos. Es un registro de un solo navegador, no una base compartida ni una medición de PMF; la demo integrada no se registra como piloto real.
+Para el piloto, `localStorage` conserva como máximo 100 ejecuciones del día de Argentina con código de organización, fecha y conteos de candidatos y seleccionados. El cierre manual de la auditoría conserva esos agregados del día, que pueden borrarse con su propia acción y vencen igualmente a medianoche. Al leerlos, la app elimina de esa clave los registros anteriores al día actual, los futuros y los inválidos. El registro refleja las ejecuciones de ese navegador. La demo integrada queda fuera del registro del piloto.
 
 La limpieza se ejecuta en el navegador: si la pestaña está activa, se programa para medianoche; si estaba suspendida, se comprueba al volver a ella o al intentar una operación. Si el navegador estaba cerrado, los agregados vencidos se eliminan al abrir la app nuevamente. No hay un proceso nocturno ni una base de datos en Vercel o Supabase. Vercel entrega la aplicación; los datos de trabajo permanecen en cada navegador. Los CSV originales y los reportes o snapshots descargados permanecen en el equipo del usuario hasta que éste los borre.
 
-No hay backend ni autorización real: el login y los roles se aplican sólo en el navegador, sirven para recorrer el MVP y no protegen datos. Los responsables escritos son datos de revisión, no autorizaciones. No se implementan conexiones por OAuth o API con los proveedores de SaaS, bajas automáticas, IA ni pagos. Este MVP no incluye SLA ni una evaluación de seguridad de producción. El tiempo informado corresponde al cruce en el navegador; para evaluar el objetivo del recorrido completo hay que registrar también el entorno y la medición correspondiente.
+La función de servidor verifica la identidad y asigna el rol. La interfaz usa ese rol para habilitar acciones sobre la auditoría local. `/api/auth` gestiona exclusivamente el inicio, la consulta y el cierre de la sesión de acceso. La carga, el cruce, la revisión y las descargas se resuelven en el navegador, y la baja de cuentas se realiza manualmente en la consola del proveedor. El tiempo mostrado corresponde al cruce en el navegador. Una medición del recorrido completo también debe registrar el entorno y los pasos del ensayo.
 
 ## Decisión técnica y próximos pasos
 
-El usuario eligió React + TypeScript y un repositorio privado para avanzar sin contratar servicios. La elección fue provisional el 03/10; los avances del 08/10 y 16/10 ya documentan React/TypeScript, procesamiento en navegador y ausencia de autenticación como el alcance adoptado del MVP. La [decisión tecnológica](docs/decision-tecnologica.md) conserva ese historial y explica la diferencia con la propuesta No-Code / Low-Code original. Los entregables históricos de Drive y sus proyecciones económicas no se reescriben mediante este cambio.
+La elección de React + TypeScript fue provisional el 03/10. Los avances del 08/10 y 16/10 documentan el procesamiento en navegador y el alcance de la primera versión. La [decisión tecnológica](docs/decision-tecnologica.md) conserva ese historial y explica la diferencia con la propuesta No-Code / Low-Code original. La autenticación de esta versión se configura según la [guía de despliegue](docs/despliegue.md).
 
 No-code configura interfaz, datos y reglas en herramientas visuales; low-code combina ese trabajo con módulos de código o integraciones. Esta app de React es desarrollo con código, aunque siga el diseño de Figma. La elección aporta control del código, versionado, pruebas y ejecución local; requiere mantener dependencias y lógica, y deja de usar el editor visual y los servicios integrados de datos/workflows del stack original. No incorpora automáticamente autenticación, base compartida ni workflows cloud.
 
-Si el equipo necesita operación compartida, el siguiente paso es acordar un backend con autenticación, permisos y tratamiento del dato, y luego revisar despliegue, costos y pruebas. También puede evaluarse una alternativa low-code que combine una interfaz o automatización visual con el motor de conciliación. Cualquiera de esas opciones exige un acuerdo nuevo; no está incluida en este MVP actual.
+Si el equipo necesita operación compartida, el siguiente paso es diseñar la persistencia y los permisos de acceso a los datos de auditoría, junto con sus reglas de conservación, costos y pruebas.

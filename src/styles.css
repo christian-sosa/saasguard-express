@@ -1357,9 +1357,6 @@ footer {
   .header-right {
     gap: 12px;
   }
-  .local-mode {
-    display: none;
-  }
   .result-layout {
     grid-template-columns: minmax(0, 1fr) 270px;
     gap: 20px;
