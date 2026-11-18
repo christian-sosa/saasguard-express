@@ -1,14 +1,18 @@
 import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react";
 import { createAuthHandler } from "./server/auth-server.js";
+import { createSavingsHistoryHandler } from "./server/savings-history.js";
 
 export default defineConfig(({ mode }) => {
-  const env = { ...loadEnv(mode, process.cwd(), "SAASGUARD_"), ...process.env };
+  const env = { ...loadEnv(mode, process.cwd(), ["SAASGUARD_", "DATABASE_URL"]), ...process.env };
   const serverAuth = env.SAASGUARD_SERVER_AUTH === "1" || Boolean(env.SAASGUARD_SESSION_SECRET);
   const auth = createAuthHandler({ env });
+  const savingsHistory = createSavingsHistoryHandler({ env });
 
-  function installAuth(server) {
-    if (serverAuth) server.middlewares.use("/api/auth", auth);
+  function installServerRoutes(server) {
+    if (!serverAuth) return;
+    server.middlewares.use("/api/auth", auth);
+    server.middlewares.use("/api/savings-history", savingsHistory);
   }
 
   return {
@@ -28,7 +32,7 @@ export default defineConfig(({ mode }) => {
     },
     plugins: [
       react(),
-      { name: "saasguard-auth", configureServer: installAuth, configurePreviewServer: installAuth },
+      { name: "saasguard-server-routes", configureServer: installServerRoutes, configurePreviewServer: installServerRoutes },
     ],
   };
 });

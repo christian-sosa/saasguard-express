@@ -1,6 +1,6 @@
 # Publicación de SaaSGuard Express
 
-El MVP académico usa Vercel Hobby, React, TypeScript y Vite. La aplicación procesa los CSV y genera las exportaciones en el navegador. La función `/api/auth` verifica el acceso y administra la sesión. Los datos de auditoría permanecen en el navegador de cada usuario.
+El MVP académico usa Vercel Hobby, React, TypeScript y Vite. La aplicación procesa los CSV y genera las exportaciones en el navegador. La función `/api/auth` administra la sesión y `/api/savings-history` gestiona los resúmenes que cada cuenta decide guardar.
 
 El dominio de producción es [saasguard-express.vercel.app](https://saasguard-express.vercel.app/). El 16/10/2026 se verificaron el acceso HTTP y el recorrido de la demo de la primera versión publicada, que era de acceso abierto. [Despliegue del commit `3fe26f7`](https://vercel.com/christian-sosas-projects-0c5f6ce7/saasguard-express/BtSCRz3CZLkkX7MKozqbfvMhm1Cc)
 
@@ -8,7 +8,7 @@ El dominio de producción es [saasguard-express.vercel.app](https://saasguard-ex
 
 Los CSV, candidatos, responsables y notas permanecen en la memoria de la pestaña y se eliminan al cerrar la auditoría, recargar o llegar a la próxima medianoche de Argentina. Los archivos originales y los reportes o snapshots descargados permanecen en el equipo. El registro agregado del piloto sigue siendo de un solo navegador y puede borrarse por separado; también vence diariamente y no es un historial compartido.
 
-El MVP funciona con almacenamiento local para la auditoría y variables de entorno para las cuentas. Si se incorpora persistencia compartida, se diseñará en un proyecto independiente del de Fábrica de Fútbol, con reglas propias de acceso y conservación de datos.
+El historial usa una base independiente de SaaSGuard. El servidor la usa para guardar resúmenes con fecha, categorías de proveedor, conteos e importes mensuales en centavos de USD. Los CSV, nombres, emails de licencias, responsables, notas y snapshots completos quedan en el navegador o en las descargas del usuario.
 
 ## Actualización de retención y pruebas — 16/10/2026
 
@@ -50,15 +50,25 @@ En Vercel, cargá estas variables de servidor para el entorno que vayas a public
 
 Guardá los valores de producción en Vercel y los de desarrollo en `.env.local`. El servidor verifica las credenciales y devuelve el rol con una sesión firmada. La cookie usa `HttpOnly`, `SameSite=Lax` y `Secure` en Vercel. La sesión con contraseña dura hasta ocho horas. Con Google vence cuando vence el token o a las ocho horas, lo que ocurra primero. «Recordar mis datos» conserva sólo el identificador en el navegador.
 
-La interfaz usa el rol para decidir qué acciones mostrar en la auditoría local. La API gestiona exclusivamente la autenticación. Los archivos y resultados quedan en la pestaña de quien los cargó.
+La interfaz usa el rol para decidir qué acciones mostrar en la auditoría local. El servidor consulta el historial bajo la identidad de la sesión y comprueba el rol antes de guardar.
 
 ### Activar Google
 
-1. En Google Cloud Console, creá un cliente OAuth de tipo «Aplicación web». Agregá `https://saasguard-express.vercel.app` como origen de JavaScript autorizado y el origen local que uses para desarrollo, por ejemplo `http://localhost:5173`.
+1. En Google Cloud Console, creá un cliente OAuth de tipo «Aplicación web». En producción usá `https://saasguard-express.vercel.app` como origen de JavaScript autorizado. Para ensayos locales usá un cliente de desarrollo con su propio origen.
 2. Configurá `SAASGUARD_GOOGLE_CLIENT_ID` y una lista de cuentas con `SAASGUARD_GOOGLE_ALLOWED_EMAILS` en formato `email:rol,email:rol`. También podés configurar `SAASGUARD_GOOGLE_ALLOWED_DOMAIN` para asignar el rol `viewer` a las cuentas verificadas de ese dominio de Google Workspace. Si una cuenta tiene un rol explícito en la lista, ese rol tiene prioridad.
 3. Volvé a desplegar y verificá el acceso con una cuenta admitida y otra sin acceso. El servidor valida la firma, audiencia y vigencia del token de Google, el email verificado y la regla de acceso. El botón aparece cuando el servidor tiene el cliente y una lista o dominio autorizado. Con cuentas de contraseña aprovisionadas, podés publicar con ese método mientras Google queda pendiente de configuración.
 
 En `npm run dev` sin `SAASGUARD_SESSION_SECRET` se usan las cuentas sintéticas de [la demo local](usuarios-de-prueba.md). Las variables `VITE_GOOGLE_CLIENT_ID`, `VITE_GOOGLE_ALLOWED_EMAILS` y `VITE_GOOGLE_ALLOWED_DOMAIN` sirven para ensayos locales de esa demo. Vite las expone al navegador. Usá únicamente valores ficticios en ellas y reservá las variables `SAASGUARD_*` para la configuración de servidor.
+
+El 18/11/2026 se habilitó Google para SaaSGuard Express con [un proyecto propio de Google Auth Platform](https://console.cloud.google.com/auth/clients?project=silken-slice-515113-n1). Se comprobó en el dominio público que la cuenta habilitada ingresa con el rol Finanzas.
+
+## Historial de ahorro potencial
+
+El historial usa Postgres en el proyecto gratuito `saasguard-history` de Neon, conectado a Production mediante el Marketplace de Vercel. `DATABASE_URL` se usa únicamente en el servidor. Para otra instalación, configurá una base dedicada y aplicá la migración con `node scripts/migrate-savings-history.mjs` en un entorno que contenga esa variable.
+
+Cada escritura guarda o actualiza el resumen de una auditoría para la cuenta de la sesión. El historial de Google se asocia al identificador verificado por Google. Para cuentas por contraseña, el usuario y correo configurados identifican la cuenta y deben ser propios de su titular. Si se cambia uno de esos campos, el historial anterior queda asociado a la cuenta previa. Una persona que entra por ambos métodos tiene un historial por cada cuenta. Una sesión de Google emitida antes del historial requiere volver a iniciar sesión para acceder a la función.
+
+Las cuentas autenticadas pueden consultar su historial. Los roles habilitados para cargar archivos pueden guardar resúmenes. La fecha se muestra en horario de Argentina y los importes son estimaciones mensuales en USD por auditoría. Los proveedores personalizados se agrupan bajo «Otro» para que el historial conserve sólo categorías predefinidas.
 
 ## Publicación del Sprint 3
 

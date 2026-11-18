@@ -1,5 +1,11 @@
 import type { Candidate, License } from './domain'
 
+const usd = new Intl.NumberFormat('es-AR', { style: 'currency', currency: 'USD', maximumFractionDigits: 2 })
+
+export function money(amount: number): string {
+  return usd.format(amount)
+}
+
 const reviewLabels: Record<Candidate['review'], string> = {
   pending: 'Por revisar',
   confirmed: 'Al checklist',

@@ -1,10 +1,6 @@
 /**
- * Sign-in for the academic MVP: username/email and password against synthetic test users, or
- * Google. The app has no backend, so everything is checked in the browser: the Google ID token
- * is decoded and validated (issuer, audience, expiry, verified email, allowed account) but its
- * signature is not verified, and the test users ship in the bundle. This identifies who operates
- * the app and selects their permissions; it is not server-side authorization. Only the
- * operator's profile is kept, never personnel data.
+ * Local demo sign-in checks synthetic users and decodes Google ID tokens in the browser.
+ * The Vercel build verifies credentials, tokens and sessions in server/auth-server.js.
  */
 import { isRole, type Role } from './roles'
 import { TEST_USERS, type LocalUser } from './users'
@@ -16,6 +12,8 @@ export interface SessionUser {
   method: 'password' | 'google'
   username?: string
   domain?: string
+  /** Binds history requests to the authenticated account seen by this tab. */
+  sessionTag?: string
   /** Epoch milliseconds when the session expires. */
   expiresAt: number
 }

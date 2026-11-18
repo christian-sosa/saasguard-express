@@ -22,6 +22,8 @@ import {
   IconChartBar,
   IconArrowsDiff,
   IconPlus,
+  IconHistory,
+  IconBookmark,
 } from "@tabler/icons-react";
 import { PieChart, Pie, Cell, ResponsiveContainer } from "recharts";
 import {
@@ -47,11 +49,13 @@ import { exportChecklistXlsx, exportChecklistPdf } from "./exports";
 import { DEMO_EMPLOYEES_CSV, DEMO_LICENSES_CSV } from "./demo";
 import { readPilotRuns, savePilotRun, clearPilotRuns } from "./session";
 import { nextArgentinaMidnight } from "./retention";
-import { auditStamp, providerSummary, reviewText } from "./labels";
+import { auditStamp, money, providerSummary, reviewText } from "./labels";
 import type { SessionUser } from "./auth";
 import { FULL_ACCESS, PERMISSIONS, ROLE_LABELS } from "./roles";
+import { SavingsHistory } from "./SavingsHistory";
+import { DEFAULT_PROVIDERS, saveSavingsHistory, savingsHistorySummary } from "./savings-history-client";
 
-type Upload = { name: string; table: CsvTable; emailHeader: string };
+type Upload = { name: string; table: CsvTable; emailHeader: string; isDemo: boolean };
 type Page = "load" | "results" | "checklist" | "closed";
 const colors = [
   "#ada0f4",
@@ -61,12 +65,6 @@ const colors = [
   "#e89ab6",
   "#aab4c8",
 ];
-const money = (n: number) =>
-  new Intl.NumberFormat("es-AR", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 2,
-  }).format(n);
 const reviewLabels = {
   pending: "Por revisar",
   confirmed: "Al checklist",
@@ -76,9 +74,9 @@ const countLabel = (count: number, singular: string, plural: string) =>
   count === 1 ? singular : plural;
 const counted = (count: number, singular: string, plural: string) =>
   `${count} ${countLabel(count, singular, plural)}`;
-function parseUpload(name: string, text: string): Upload {
+function parseUpload(name: string, text: string, isDemo = false): Upload {
   const parsed = parseCsv(text);
-  return { name, table: parsed, emailHeader: pickEmailHeader(parsed.headers) };
+  return { name, table: parsed, emailHeader: pickEmailHeader(parsed.headers), isDemo };
 }
 async function readCsv(file: File): Promise<Upload> {
   if (!/\.csv$/i.test(file.name))
@@ -322,7 +320,7 @@ export function App({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
-  const [isDemo, setIsDemo] = useState(false);
+  const isDemo = Boolean(hr?.isDemo || saas.some((upload) => upload.isDemo));
   const [search, setSearch] = useState("");
   const [providerFilter, setProviderFilter] = useState("all");
   const [reviewFilter, setReviewFilter] = useState("all");
@@ -331,8 +329,9 @@ export function App({
   const [assignee, setAssignee] = useState("");
   const [editCost, setEditCost] = useState("");
   const can = user ? PERMISSIONS[user.role] : FULL_ACCESS;
+  const historyEnabled = Boolean(user && import.meta.env.VITE_SAASGUARD_SERVER_AUTH === "true");
   const [modal, setModal] = useState<
-    "close" | "restart" | "compare" | "pilot" | null
+    "close" | "restart" | "compare" | "pilot" | "history" | null
   >(null);
   const [reportsSaved, setReportsSaved] = useState(false);
   const [snapshots, setSnapshots] = useState<[unknown | null, unknown | null]>([
@@ -347,6 +346,11 @@ export function App({
   const [pilotRuns, setPilotRuns] = useState(readPilotRuns);
   const [closedCount, setClosedCount] = useState(0);
   const [pilotSaved, setPilotSaved] = useState(false);
+  const [auditId, setAuditId] = useState<string | null>(null);
+  const [savedHistorySummary, setSavedHistorySummary] = useState("");
+  const [savingHistory, setSavingHistory] = useState(false);
+  const [historySaveError, setHistorySaveError] = useState("");
+  const historySaveRequest = useRef<AbortController | null>(null);
   const hrInput = useRef<HTMLInputElement>(null),
     saasInput = useRef<HTMLInputElement>(null);
   const sessionEpoch = useRef(0);
@@ -399,13 +403,18 @@ export function App({
     setEditCost("");
     setPilotCode("");
     setPilotSaved(false);
+    historySaveRequest.current?.abort();
+    historySaveRequest.current = null;
+    setAuditId(null);
+    setSavedHistorySummary("");
+    setSavingHistory(false);
+    setHistorySaveError("");
     setError("");
     setBusy(false);
     setModal(null);
     if (destination === "load") setCreatedAt(new Date().toISOString());
     setPage(destination);
     setNotice(message);
-    setIsDemo(false);
     if (hrInput.current) hrInput.current.value = "";
     if (saasInput.current) saasInput.current.value = "";
   }
@@ -437,6 +446,7 @@ export function App({
       document.removeEventListener("visibilitychange", check);
     };
   }, [createdAt, page]);
+  useEffect(() => () => historySaveRequest.current?.abort(), []);
   function requireSession() {
     if (isExpired(createdAt)) {
       clearAudit("La sesión venció y los datos se eliminaron.");
@@ -479,6 +489,10 @@ export function App({
   const stats = useMemo(
     () => summarize(candidates, licenses),
     [candidates, licenses],
+  );
+  const historySummary = useMemo(
+    () => auditId ? savingsHistorySummary(auditId, licenses.map((license) => license.provider), stats) : null,
+    [auditId, licenses, stats],
   );
   const selected = candidates.filter((c) => c.review === "confirmed");
   const pendingCount = candidates.filter((c) => c.review === "pending").length;
@@ -535,7 +549,6 @@ export function App({
         setCurrentRoster(false);
       } else
         setSaas((previous) => (append ? [...previous, ...uploads] : uploads));
-      setIsDemo(false);
       setPilotSaved(false);
       setNotice("");
     } catch (e) {
@@ -551,13 +564,12 @@ export function App({
     sessionEpoch.current++;
     snapshotEpoch.current++;
     setBusy(false);
-    setHr(parseUpload("nomina_demo.csv", DEMO_EMPLOYEES_CSV));
-    setSaas([parseUpload("licencias_demo.csv", DEMO_LICENSES_CSV)]);
+    setHr(parseUpload("nomina_demo.csv", DEMO_EMPLOYEES_CSV, true));
+    setSaas([parseUpload("licencias_demo.csv", DEMO_LICENSES_CSV, true)]);
     setOrganization("Empresa de ejemplo");
     setDefaultCost("");
     setCreatedAt(new Date().toISOString());
     setCurrentRoster(true);
-    setIsDemo(true);
     setPilotSaved(false);
     setError("");
     setNotice("Datos ficticios cargados. Podés reemplazarlos por tus CSV.");
@@ -573,6 +585,7 @@ export function App({
     const start = performance.now();
     try {
       const next = reconcile(saasResult.licenses, hrResult.employees);
+      setAuditId(historyEnabled && can.load && !isDemo ? crypto.randomUUID?.() ?? null : null);
       setLicenses(saasResult.licenses);
       setEmployees(hrResult.employees);
       setCandidates(next);
@@ -785,6 +798,44 @@ export function App({
     }
   }
 
+  async function saveHistorySummary() {
+    if (!historySummary || !historyEnabled || !can.load || historySaveRequest.current || !requireSession()) return;
+    const controller = new AbortController();
+    historySaveRequest.current = controller;
+    setSavingHistory(true);
+    setHistorySaveError("");
+    try {
+      await saveSavingsHistory(historySummary, user?.sessionTag, controller.signal);
+      if (!controller.signal.aborted) setSavedHistorySummary(JSON.stringify(historySummary));
+    } catch (failure) {
+      if (!controller.signal.aborted) {
+        setHistorySaveError(failure instanceof Error ? failure.message : "No pudimos guardar el resumen.");
+      }
+    } finally {
+      if (!controller.signal.aborted) {
+        historySaveRequest.current = null;
+        setSavingHistory(false);
+      }
+    }
+  }
+
+  const historySaveControl = historySummary && (
+    <div className="history-save">
+      <Button type="button" variant="ghost" onClick={() => void saveHistorySummary()} disabled={savingHistory}>
+        <IconBookmark size={18} />
+        {savingHistory ? "Guardando resumen…" : savedHistorySummary ? "Actualizar resumen" : "Guardar resumen"}
+      </Button>
+      <span role="status" className="muted">
+        {savedHistorySummary
+          ? savedHistorySummary === JSON.stringify(historySummary)
+            ? "Resumen guardado en tu historial."
+            : "Hay cambios desde el último guardado."
+          : "Tu historial guarda importes, conteos y categorías de proveedores."}
+      </span>
+      {historySaveError && <p role="alert" className="field-error">{historySaveError}</p>}
+    </div>
+  );
+
   return (
     <main className="app-shell">
       <header className="app-header">
@@ -812,7 +863,7 @@ export function App({
                 ? "Paso 3 de 4 · Checklist"
                 : "Paso 4 de 4 · Cierre"}
         </span>
-        <div className="header-right">
+        <div className={`header-right${historyEnabled ? " with-savings-history" : ""}`}>
           <span className="time-hint">
             {page === "load" ? (
               <>
@@ -829,7 +880,7 @@ export function App({
               </>
             ) : (
               <>
-                <IconShieldCheck size={18} /> Datos eliminados
+                <IconShieldCheck size={18} /> Datos locales eliminados
               </>
             )}
           </span>
@@ -855,11 +906,16 @@ export function App({
                 {isDemo
                   ? "Datos ficticios · Demostración"
                   : user
-                    ? `${user.email} · Datos en este navegador`
+                    ? `${user.email} · CSV en este navegador`
                     : "Sin cuenta · Datos en este navegador"}
               </small>
             </div>
           </div>
+          {historyEnabled && (
+            <Button type="button" variant="ghost" onClick={() => setModal("history")}>
+              <IconHistory size={17} /> Historial de ahorro
+            </Button>
+          )}
           {onSignOut && (
             <Button variant="ghost" onClick={onSignOut}>
               Cerrar sesión
@@ -1129,13 +1185,7 @@ export function App({
                 value={provider}
                 onChange={(e) => setProvider(e.target.value)}
               >
-                <option>Google Workspace</option>
-                <option>Slack</option>
-                <option>Jira</option>
-                <option>Trello</option>
-                <option>Figma</option>
-                <option>Zoom</option>
-                <option>Notion</option>
+                {DEFAULT_PROVIDERS.map((name) => <option key={name}>{name}</option>)}
               </select>
             </label>
             <label className="default-card">
@@ -1173,10 +1223,10 @@ export function App({
           </Button>
           <div className="privacy-strip">
             <IconShieldCheck size={19} /> Sin contraseñas ni conexión a tus
-            plataformas: los CSV se procesan en este navegador. Los datos de la
-            app se borran al cerrar la auditoría o a las 00:00 de Argentina; si
-            la pestaña estaba suspendida, al volver. Las descargas permanecen en
-            tu equipo.
+            plataformas: los CSV se procesan en este navegador. Los archivos y
+            el detalle de la auditoría se borran al cerrarla o a las 00:00 de
+            Argentina. Si la pestaña estaba suspendida, se borran al volver.
+            Las descargas permanecen en tu equipo.
           </div>
         </div>
       )}
@@ -1481,6 +1531,7 @@ export function App({
               <IconArrowsDiff size={19} /> Comparar períodos
             </Button>
           </div>
+          {historySaveControl}
           {can.exportSnapshot && (
             <div className="snapshot-strip">
               <label>
@@ -1550,6 +1601,7 @@ export function App({
             </div>
             <span className="badge amber">Bajas pendientes de ejecutar</span>
           </div>
+          {historySaveControl}
           <div className="table-wrap">
             <table>
               <thead>
@@ -1828,6 +1880,7 @@ export function App({
               : "Se eliminarán los CSV, los resultados y las decisiones de esta sesión. Descargá el checklist antes de continuar si querés conservarlo."}
           </p>
           <p className="muted">
+            {historyEnabled && page !== "load" && "Los resúmenes que guardaste siguen disponibles en tu historial. "}
             Los archivos ya descargados permanecen en tu equipo. Los conteos del
             piloto se conservan sólo durante el día de Argentina y se limpian a
             las 00:00, o al volver a abrir la app si estaba cerrada o
@@ -1982,6 +2035,11 @@ export function App({
               {error}
             </p>
           )}
+        </Modal>
+      )}
+      {modal === "history" && historyEnabled && (
+        <Modal title="Historial de ahorro" wide onClose={() => setModal(null)}>
+          <SavingsHistory sessionTag={user?.sessionTag} />
         </Modal>
       )}
       {modal === "pilot" && (
