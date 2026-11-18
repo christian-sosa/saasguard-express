@@ -11,7 +11,7 @@ import "./styles.css";
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <AuthGate>
-      {(user, signOut) => <App user={user} onSignOut={signOut} />}
+      {(user, signOut) => <App key={user?.sessionTag} user={user} onSignOut={signOut} />}
     </AuthGate>
   </React.StrictMode>,
 );

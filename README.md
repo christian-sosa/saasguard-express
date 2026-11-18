@@ -2,7 +2,7 @@
 
 MVP académico para cruzar una nómina vigente con exportaciones de licencias SaaS, revisar cuentas que no coinciden y preparar un checklist de bajas manuales. Está construido con React y TypeScript y procesa los archivos localmente en el navegador, tanto al ejecutar en el equipo como al servirlo desde Vercel.
 
-El proyecto usa Vercel Hobby. Esta versión admite cuentas configuradas en el servidor y permite habilitar Google. [Dominio del proyecto](https://saasguard-express.vercel.app/) · [Guía de despliegue](docs/despliegue.md)
+El proyecto usa Vercel Hobby. La versión publicada admite las cuentas de contraseña y de Google habilitadas en el servidor. [Dominio del proyecto](https://saasguard-express.vercel.app/) · [Guía de despliegue](docs/despliegue.md)
 
 La referencia visual es la versión v2 del [diseño de SaaSGuard en Figma](https://www.figma.com/design/7ooEdCaHVh4rrrBjXlipuA/SaaSGuard?node-id=0-1&p=f). Las cifras de la app se calculan desde los archivos cargados: no reproducen como hechos las cifras ilustrativas del prototipo. El resultado identifica candidatos a revisión y ahorro potencial, sin afirmar egresos, actividad real, accesos revocados ni ahorro logrado.
 
@@ -42,6 +42,8 @@ El recorrido principal implementa las funciones de HU01–HU15: descargar ejempl
 La pantalla de carga vacía no ofrece un cierre. Si ya se ingresaron datos o archivos, **Descartar carga** los elimina y mantiene el paso de carga. Después del cruce, **Cerrar auditoría** muestra el cierre y **Nueva auditoría** permite borrar la anterior y volver directamente a cargar archivos, previa confirmación.
 
 También hay herramientas de evolución posterior al MVP: carga de varios archivos SaaS con validación conjunta (HU16), snapshots JSON completos por proveedor para comparar períodos (HU17), y un registro agregado local del piloto (HU18). Que estas herramientas existan no acredita haber ejecutado un piloto comercial ni haber cumplido sus objetivos de recurrencia.
+
+Con una cuenta autenticada y el almacenamiento configurado, **Guardar resumen** conserva la estimación mensual de una auditoría en **Historial de ahorro**. El registro incluye fecha, categorías de proveedor, conteos, ahorro potencial y subtotal del checklist. Podés consultar tus auditorías al volver a ingresar. Cada importe corresponde a su auditoría. Medir ahorro realizado requiere verificar las bajas y la facturación.
 
 | Regla | Comportamiento |
 |---|---|
@@ -83,9 +85,9 @@ Actualización del 16/10/2026: los CSV, las cuentas y las decisiones viven en me
 
 Para el piloto, `localStorage` conserva como máximo 100 ejecuciones del día de Argentina con código de organización, fecha y conteos de candidatos y seleccionados. El cierre manual de la auditoría conserva esos agregados del día, que pueden borrarse con su propia acción y vencen igualmente a medianoche. Al leerlos, la app elimina de esa clave los registros anteriores al día actual, los futuros y los inválidos. El registro refleja las ejecuciones de ese navegador. La demo integrada queda fuera del registro del piloto.
 
-La limpieza se ejecuta en el navegador: si la pestaña está activa, se programa para medianoche; si estaba suspendida, se comprueba al volver a ella o al intentar una operación. Si el navegador estaba cerrado, los agregados vencidos se eliminan al abrir la app nuevamente. No hay un proceso nocturno ni una base de datos en Vercel o Supabase. Vercel entrega la aplicación; los datos de trabajo permanecen en cada navegador. Los CSV originales y los reportes o snapshots descargados permanecen en el equipo del usuario hasta que éste los borre.
+La limpieza de la auditoría y del registro del piloto se ejecuta en el navegador. La app la programa para medianoche y comprueba el vencimiento al volver a la pestaña o al iniciar una operación. Los resúmenes guardados explícitamente en el historial sobreviven al cierre local. Los CSV originales y los reportes o snapshots descargados permanecen en el equipo del usuario hasta que éste los borre.
 
-La función de servidor verifica la identidad y asigna el rol. La interfaz usa ese rol para habilitar acciones sobre la auditoría local. `/api/auth` gestiona exclusivamente el inicio, la consulta y el cierre de la sesión de acceso. La carga, el cruce, la revisión y las descargas se resuelven en el navegador, y la baja de cuentas se realiza manualmente en la consola del proveedor. El tiempo mostrado corresponde al cruce en el navegador. Una medición del recorrido completo también debe registrar el entorno y los pasos del ensayo.
+La función de servidor verifica la identidad y asigna el rol. `/api/auth` administra la sesión y `/api/savings-history` guarda o consulta los resúmenes de su titular. El almacenamiento del historial recibe únicamente agregados y un identificador de cuenta derivado en el servidor. La carga, el cruce, la revisión y las descargas se resuelven en el navegador, y la baja de cuentas se realiza manualmente en la consola del proveedor. El tiempo mostrado corresponde al cruce en el navegador. Una medición del recorrido completo también debe registrar el entorno y los pasos del ensayo.
 
 ## Decisión técnica y próximos pasos
 
@@ -93,4 +95,4 @@ La elección de React + TypeScript fue provisional el 03/10. Los avances del 08/
 
 No-code configura interfaz, datos y reglas en herramientas visuales; low-code combina ese trabajo con módulos de código o integraciones. Esta app de React es desarrollo con código, aunque siga el diseño de Figma. La elección aporta control del código, versionado, pruebas y ejecución local; requiere mantener dependencias y lógica, y deja de usar el editor visual y los servicios integrados de datos/workflows del stack original. No incorpora automáticamente autenticación, base compartida ni workflows cloud.
 
-Si el equipo necesita operación compartida, el siguiente paso es diseñar la persistencia y los permisos de acceso a los datos de auditoría, junto con sus reglas de conservación, costos y pruebas.
+Si el equipo necesita colaboración entre roles, queda por diseñar cómo se comparten auditorías dentro de una organización y qué permisos requieren.

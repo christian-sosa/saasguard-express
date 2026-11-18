@@ -1,13 +1,13 @@
-import { createHmac, scrypt, timingSafeEqual } from 'node:crypto'
+import { createHash, createHmac, scrypt, timingSafeEqual } from 'node:crypto'
 import { isIP } from 'node:net'
 import { promisify } from 'node:util'
 import { OAuth2Client } from 'google-auth-library'
+import { json, readBody, RequestError, sameOrigin } from './http.js'
 
 const deriveKey = promisify(scrypt)
 const roles = new Set(['admin', 'it', 'people', 'finance', 'viewer'])
 const cookieName = 'saasguard_session'
 const sessionMs = 8 * 60 * 60 * 1000
-const maxBodyBytes = 16 * 1024
 const lockoutMs = 30_000
 const maxFailures = 5
 const maxTrackedAddresses = 256
@@ -16,13 +16,6 @@ const dummyHash = Buffer.alloc(64)
 const invalidPassword = 'Usuario o contraseña incorrectos.'
 const invalidGoogle = 'No pudimos iniciar sesión con Google. Verificá que la cuenta tenga acceso.'
 const unavailable = 'El inicio de sesión no está disponible. Volvé a intentar más tarde.'
-
-class RequestError extends Error {
-  constructor(status, message) {
-    super(message)
-    this.status = status
-  }
-}
 
 function normalized(value) {
   return typeof value === 'string' ? value.trim().toLowerCase() : ''
@@ -36,6 +29,10 @@ function decodeHex(value) {
 
 function validEmail(email) {
   return email.length <= 254 && /^[^\s@]+@[^\s@]+$/.test(email)
+}
+
+function validGoogleSubject(value) {
+  return typeof value === 'string' && /^[\x21-\x7e]{1,255}$/.test(value)
 }
 
 function readPasswordUsers(raw) {
@@ -114,6 +111,10 @@ function sessionSignature(encoded, key) {
   return createHmac('sha256', key).update(encoded).digest('base64url')
 }
 
+function signedSessionTag(value) {
+  return createHash('sha256').update('saasguard:session-context:v1\0').update(value).digest('base64url')
+}
+
 function writeCookie(res, value, maxAge, secure) {
   const secureFlag = secure ? '; Secure' : ''
   res.setHeader('Set-Cookie', cookieName + '=' + value + '; Max-Age=' + maxAge
@@ -122,7 +123,9 @@ function writeCookie(res, value, maxAge, secure) {
 
 function writeSession(res, user, now, key, secure) {
   const encoded = Buffer.from(JSON.stringify(user)).toString('base64url')
-  writeCookie(res, encoded + '.' + sessionSignature(encoded, key), Math.floor((user.expiresAt - now) / 1000), secure)
+  const value = encoded + '.' + sessionSignature(encoded, key)
+  writeCookie(res, value, Math.floor((user.expiresAt - now) / 1000), secure)
+  return { user, sessionTag: signedSessionTag(value) }
 }
 
 function readSession(req, config, now) {
@@ -130,7 +133,8 @@ function readSession(req, config, now) {
   const entries = cookie.split(';').map((entry) => entry.trim()).filter((entry) => entry.startsWith(cookieName + '='))
   if (entries.length !== 1 || entries[0].length > 4096) return null
 
-  const [encoded, signature, extra] = entries[0].slice(cookieName.length + 1).split('.')
+  const value = entries[0].slice(cookieName.length + 1)
+  const [encoded, signature, extra] = value.split('.')
   if (extra !== undefined || !encoded || !signature || !/^[\w-]+$/.test(encoded) || !/^[\w-]{43}$/.test(signature)) return null
   const expected = sessionSignature(encoded, config.key)
   if (!timingSafeEqual(Buffer.from(signature), Buffer.from(expected))) return null
@@ -145,70 +149,30 @@ function readSession(req, config, now) {
 
   if (user.method === 'password') {
     const account = config.passwordUsers.get(user.username)
-    return account?.email === user.email ? passwordSession(account, user.expiresAt) : null
+    if (!account || account.email !== user.email) return null
+    return { user: passwordSession(account, user.expiresAt), sessionTag: signedSessionTag(value) }
   }
   if (user.method === 'google') {
     const role = googleRole(config.google, user.email, user.domain)
-    return role ? { ...user, role } : null
+    return role ? { user: { ...user, role }, sessionTag: signedSessionTag(value) } : null
   }
   return null
 }
 
-function sameOrigin(req, secure) {
-  const { host, origin } = req.headers
-  if (typeof host !== 'string' || typeof origin !== 'string') return false
-  try {
-    return origin === new URL((secure ? 'https://' : 'http://') + host).origin
-  } catch {
-    return false
-  }
+function secureRequest(req, config) {
+  return config.onVercel || Boolean(req.socket?.encrypted) || req.headers['x-forwarded-proto'] === 'https'
 }
 
-async function readBody(req) {
-  const contentType = req.headers['content-type']
-  if (typeof contentType !== 'string' || contentType.split(';')[0].trim().toLowerCase() !== 'application/json') {
-    throw new RequestError(415, 'Enviá la solicitud en formato JSON.')
-  }
+export function createSessionReader({ env = process.env, now = Date.now } = {}) {
+  const config = readConfig(env)
+  if (!config) return null
+  return (req) => ({ ...readSession(req, config, now()), secure: secureRequest(req, config) })
+}
 
-  if (Number(req.headers['content-length']) > maxBodyBytes) {
-    throw new RequestError(413, 'La solicitud supera el tamaño permitido.')
-  }
-  let body
-  try {
-    body = req.body
-  } catch {
-    throw new RequestError(400, 'La solicitud de inicio de sesión no es válida.')
-  }
-  if (body === undefined) {
-    const chunks = []
-    let bytes = 0
-    for await (const chunk of req.iterator({ destroyOnReturn: false })) {
-      const buffer = Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)
-      bytes += buffer.length
-      if (bytes > maxBodyBytes) {
-        req.resume()
-        throw new RequestError(413, 'La solicitud supera el tamaño permitido.')
-      }
-      chunks.push(buffer)
-    }
-    body = Buffer.concat(chunks)
-  }
-
-  if (Buffer.isBuffer(body) || typeof body === 'string') {
-    if (Buffer.byteLength(body) > maxBodyBytes) throw new RequestError(413, 'La solicitud supera el tamaño permitido.')
-    try {
-      body = JSON.parse(body.toString())
-    } catch {
-      throw new RequestError(400, 'La solicitud de inicio de sesión no es válida.')
-    }
-  }
-  if (!body || typeof body !== 'object' || Array.isArray(body)) {
-    throw new RequestError(400, 'La solicitud de inicio de sesión no es válida.')
-  }
-  if (Buffer.byteLength(JSON.stringify(body)) > maxBodyBytes) {
-    throw new RequestError(413, 'La solicitud supera el tamaño permitido.')
-  }
-  return body
+function publicUser(session) {
+  if (!session) return null
+  const { googleSubject, ...profile } = session.user
+  return { ...profile, sessionTag: session.sessionTag }
 }
 
 function requestAddress(req, onVercel) {
@@ -233,13 +197,6 @@ function getAttempt(attempts, address, now) {
   const entry = { failures: 0, pending: false, until: now + lockoutMs }
   attempts.set(address, entry)
   return entry
-}
-
-function json(res, status, value) {
-  res.statusCode = status
-  res.setHeader('Content-Type', 'application/json; charset=utf-8')
-  res.setHeader('Cache-Control', 'no-store')
-  res.end(JSON.stringify(value))
 }
 
 export function createAuthHandler({ env = process.env, now = Date.now, verifyGoogle = verifyGoogleToken } = {}) {
@@ -296,14 +253,15 @@ export function createAuthHandler({ env = process.env, now = Date.now, verifyGoo
     const timestamp = now()
     const email = normalized(payload?.email)
     const domain = normalized(payload?.hd) || undefined
+    const googleSubject = payload?.sub
     const expiresAt = Math.min(timestamp + sessionMs, payload?.exp * 1000)
     const role = googleRole(config.google, email, domain)
-    if (payload?.email_verified !== true || !validEmail(email) || !role || typeof payload.exp !== 'number'
+    if (!validGoogleSubject(googleSubject) || payload?.email_verified !== true || !validEmail(email) || !role || typeof payload.exp !== 'number'
       || !Number.isFinite(expiresAt) || expiresAt <= timestamp) {
       throw new RequestError(401, invalidGoogle)
     }
     const name = typeof payload.name === 'string' ? payload.name.trim().slice(0, 160) : ''
-    return { email, name: name || email, role, method: 'google', domain, expiresAt }
+    return { email, name: name || email, role, method: 'google', domain, googleSubject, expiresAt }
   }
 
   return async function authHandler(req, res) {
@@ -314,15 +272,15 @@ export function createAuthHandler({ env = process.env, now = Date.now, verifyGoo
       }
       if (!config) throw new RequestError(503, unavailable)
 
-      const secure = config.onVercel || Boolean(req.socket?.encrypted) || req.headers['x-forwarded-proto'] === 'https'
+      const secure = secureRequest(req, config)
       if (req.method === 'GET') {
         return json(res, 200, {
-          user: readSession(req, config, now()),
+          user: publicUser(readSession(req, config, now())),
           googleClientId: config.google?.clientId ?? null,
         })
       }
       if (!sameOrigin(req, secure)) throw new RequestError(403, 'Origen de la solicitud no permitido.')
-      const body = await readBody(req)
+      const body = await readBody(req, 'La solicitud de inicio de sesión no es válida.')
       if (body.action === 'logout') {
         writeCookie(res, '', 0, secure)
         return json(res, 200, { user: null })
@@ -342,8 +300,8 @@ export function createAuthHandler({ env = process.env, now = Date.now, verifyGoo
         default:
           throw new RequestError(400, 'La solicitud de inicio de sesión no es válida.')
       }
-      writeSession(res, user, now(), config.key, secure)
-      return json(res, 200, { user })
+      const session = writeSession(res, user, now(), config.key, secure)
+      return json(res, 200, { user: publicUser(session) })
     } catch (error) {
       const status = error instanceof RequestError ? error.status : 500
       const message = error instanceof RequestError ? error.message : unavailable

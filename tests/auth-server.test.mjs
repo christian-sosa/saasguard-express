@@ -55,9 +55,11 @@ test('password login creates a private cookie and logout clears it', async (t) =
   assert.equal(initial.response.headers.get('cache-control'), 'no-store')
 
   const login = await request({ body: signIn('  OPERATOR@EXAMPLE.TEST  ') })
+  const { sessionTag } = login.body.user
+  assert.match(sessionTag, /^[\w-]{43}$/)
   const expectedUser = {
     email: user.email, name: user.name, role: user.role, username: user.username,
-    method: 'password', expiresAt: timestamp + eightHours,
+    method: 'password', expiresAt: timestamp + eightHours, sessionTag,
   }
   assert.equal(login.response.status, 200)
   assert.deepEqual(login.body, { user: expectedUser })
@@ -163,7 +165,8 @@ test('Google delegates token verification and rechecks allowed membership on rea
   }
   const verifiedUntil = timestamp + 120_000
   let profile = {
-    email: 'finance@example.test', email_verified: true, name: 'Finanzas de prueba', exp: verifiedUntil / 1000,
+    email: 'finance@example.test', email_verified: true, name: 'Finanzas de prueba',
+    sub: 'finance-synthetic-google-subject', exp: verifiedUntil / 1000,
   }
   const calls = []
   const verifyGoogle = async (token, audience) => {
@@ -181,6 +184,11 @@ test('Google delegates token verification and rechecks allowed membership on rea
   assert.equal(login.response.status, 200)
   assert.equal(login.body.user.role, 'finance')
   assert.equal(login.body.user.expiresAt, verifiedUntil)
+  assert.equal(Object.hasOwn(login.body.user, 'googleSubject'), false)
+  const restored = await request({ cookie: login.cookie })
+  assert.equal(Object.hasOwn(restored.body.user, 'googleSubject'), false)
+  assert.match(login.body.user.sessionTag, /^[\w-]{43}$/)
+  assert.equal(restored.body.user.sessionTag, login.body.user.sessionTag)
   assert.match(login.setCookie, /; Max-Age=120;/)
   const changedRole = await serverFor(t, {
     env: { ...googleEnv, SAASGUARD_GOOGLE_ALLOWED_EMAILS: 'finance@example.test:viewer' },
@@ -195,7 +203,10 @@ test('Google delegates token verification and rechecks allowed membership on rea
 
   profile = { ...profile, email_verified: false }
   assert.equal((await googleLogin()).response.status, 401)
-  profile = { ...profile, email_verified: true, email: 'unlisted@workspace.example.test' }
+  const subject = profile.sub
+  profile = { ...profile, email_verified: true, sub: undefined }
+  assert.equal((await googleLogin()).response.status, 401)
+  profile = { ...profile, sub: subject, email: 'unlisted@workspace.example.test' }
   const unlisted = await googleLogin()
   assert.equal(unlisted.response.status, 401)
   assert.doesNotMatch(unlisted.body.error, /unlisted/)
